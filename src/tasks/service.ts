@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { ZeroAddress, getAddress, isAddress, parseEther } from "ethers";
+import { ZeroAddress, formatEther, getAddress, isAddress, parseEther } from "ethers";
 import { z } from "zod";
 import { ChainError, toOnchainTaskId, type EscrowClient, type TxResult } from "../chain/escrow";
 import type { CreTrigger } from "../cre/trigger";
@@ -53,6 +53,8 @@ export interface TaskServiceConfig {
   payeeAddress: string;
   defaultTolerance: number;
   defaultRewardWei: bigint;
+  /** Optional upper bound for a task's reward (public deployments: anyone can create + fund tasks). */
+  maxRewardWei?: bigint;
   /** Allowed clock drift between robot and backend when checking that a proof is not older than its task. */
   proofClockSkewSeconds?: number;
 }
@@ -130,6 +132,9 @@ export class TaskService {
 
     const rewardWei = body.reward_eth !== undefined ? parseEther(body.reward_eth) : config.defaultRewardWei;
     if (rewardWei <= 0n || rewardWei > UINT256_MAX) throw new HttpError(400, "reward_eth must be greater than 0 and fit in uint256");
+    if (config.maxRewardWei !== undefined && rewardWei > config.maxRewardWei) {
+      throw new HttpError(400, `reward_eth exceeds this deployment's cap of ${formatEther(config.maxRewardWei)} ETH`);
+    }
 
     const now = new Date().toISOString();
     const task: Task = {

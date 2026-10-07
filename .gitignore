@@ -4,10 +4,17 @@ cache/
 typechain-types/
 dist/
 coverage/
+# Secrets live only in local env files (.env, .env.local, .env.sepolia, .env.*.local, cre/.env, …).
+# Patterns without a slash match in every directory; only the *.example templates are tracked.
 .env
+.env.local
+.env.*.local
+.env.*
+!.env.example
+*.pem
+*.key
 deployments/*.json
 !deployments/.gitkeep
 .claude/*.lock
-cre/.env
 cre/**/node_modules/
 cre/**/*.wasm

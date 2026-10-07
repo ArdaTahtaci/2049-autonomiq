@@ -1,0 +1,14 @@
+{
+  // Production build (Render): compiles only what the server imports, from src/server.ts down.
+  // `npm run build` = hardhat compile (generates typechain-types/) + tsc -p tsconfig.build.json
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    "types": ["node"],
+    "noEmit": false,
+    "sourceMap": true
+  },
+  "include": [],
+  "files": ["src/server.ts"]
+}

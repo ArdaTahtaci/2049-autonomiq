@@ -249,9 +249,11 @@ Copy `.env.example` to `.env` if you need to change anything. **Every variable h
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `PORT` | `3000` | Backend HTTP port |
+| `PORT` | `3000` | Backend HTTP port (Render injects it) |
+| `HOST` | `0.0.0.0` | Bind address |
 | `RPC_URL` | `http://127.0.0.1:8545` | JSON-RPC endpoint |
 | `ESCROW_ADDRESS` | from `deployments/localhost.json` | Escrow contract address |
+| `ESCROW_DEPLOY_BLOCK` | `0` | Block the escrow was deployed at; event lookups start there. Public RPCs cap `eth_getLogs` ranges. |
 | `SETTLEMENT_MODE` | `direct` | `cre` = the Chainlink CRE workflow settles (`npm run dev:cre`). `direct` = the backend's verifier key settles (local fallback). |
 | `CRE_TRIGGER_URL` | `http://127.0.0.1:2000/trigger` | The workflow's HTTP trigger (served by `cre workflow simulate --listen`) |
 | `CRE_SETTLEMENT_TIMEOUT_MS` | `120000` | After this, a pending CRE settlement is marked `TIMEOUT`; retry with `POST /tasks/:id/settle` |
@@ -267,6 +269,7 @@ Copy `.env.example` to `.env` if you need to change anything. **Every variable h
 | `MOCK_ROBOT_DELAY_MS` | `1500` | Simulated execution time |
 | `POSITION_TOLERANCE_M` | `0.05` | Default success tolerance in meters |
 | `DEFAULT_REWARD_ETH` | `0.1` | Default task reward |
+| `MAX_REWARD_ETH` | unset (no cap) | Per-task reward cap. Recommended on public deployments, where anyone can create and fund tasks with the requester key. |
 
 The default keys are Hardhat's **public** development accounts. The backend and deploy scripts refuse to use them on any chain other than 31337. No real secrets are stored in this repository.
 
@@ -342,6 +345,71 @@ curl -s $API/tasks/task_001        # status SETTLED, tx hashes, verification che
 ```
 
 `mock_outcome` is one of `success`, `failure` (object dropped mid-route) or `false_success` (the robot claims success but the object is misplaced).
+
+## Deploying to Render
+
+The backend deploys as a Render **Web Service** against a public testnet (Ethereum Sepolia by default; any EVM RPC works). [`render.yaml`](render.yaml) is a ready Blueprint.
+
+| | |
+|---|---|
+| Build | `npm ci --include=dev && npm run build`: Hardhat compiles the contract types, then `tsc -p tsconfig.build.json` writes `dist/` |
+| Start | `npm start` = `node dist/src/server.js`. Plain Node, no `tsx` at runtime. Binds `HOST=0.0.0.0` on Render's `PORT`. |
+| Health check | `GET /health`: `200` when the chain is reachable, `503` otherwise |
+| Node | `.node-version` (24); `engines.node >= 20` |
+
+Local development is unchanged: `npm run dev` still runs the TypeScript sources with `tsx`, and the Hardhat and CRE demos don't use `dist/`.
+
+**1. Put testnet keys in `.env.sepolia` and fund them.** Use fresh, testnet-only keys, never Hardhat's public dev keys; the backend refuses those off the local chain.
+
+```bash
+cp .env.example .env.sepolia   # gitignored, like every .env* file except .env.example
+```
+
+In `.env.sepolia`, set these:
+
+- `RPC_URL`, e.g. `https://ethereum-sepolia-rpc.publicnode.com`.
+- `VERIFIER_PRIVATE_KEY`. Needs Sepolia ETH, for deployment and settlement gas.
+- `REQUESTER_PRIVATE_KEY`. Needs Sepolia ETH, for rewards and gas.
+- `ROBOT_PRIVATE_KEY`. It only signs, so it needs no funds.
+- `PAYEE_ADDRESS`, which can be any address you control.
+
+Don't put testnet keys in `.env`. The local Hardhat demo and `npm run dev` read `.env` and need the dev accounts. Don't pass keys on the command line either, where they end up in shell history.
+
+**2. Deploy the escrow to the testnet** from your machine:
+
+```bash
+npm run deploy:sepolia   # loads .env.sepolia only; refuses an unfunded verifier
+#   → prints ESCROW_ADDRESS=0x…  and  ESCROW_DEPLOY_BLOCK=…   (for the Render dashboard and .env.sepolia)
+# optional: CRE_FORWARDER_ADDRESS=0x… npm run deploy:sepolia  also points the escrow at a Chainlink forwarder
+```
+
+`npm run dev:sepolia` runs the backend locally against the testnet, using the same file.
+
+**3. Create the service.** In the Render dashboard, choose **New → Blueprint** and pick this repository. Then fill in the `sync: false` values. They are entered only in the dashboard (**Service → Environment**), never in `render.yaml`:
+
+- `RPC_URL`
+- `ESCROW_ADDRESS` and `ESCROW_DEPLOY_BLOCK`
+- `VERIFIER_PRIVATE_KEY`, `REQUESTER_PRIVATE_KEY` and `ROBOT_PRIVATE_KEY`
+- `PAYEE_ADDRESS`
+
+Without the Blueprint, create a Web Service with the build and start commands above, health check path `/health`, and the same environment variables.
+
+**4. Check it:**
+
+```bash
+curl https://<your-service>.onrender.com/health        # {"ok":true,"chain_id":"11155111",…}
+API=https://<your-service>.onrender.com
+curl -s -X POST $API/tasks -H 'content-type: application/json' -d '{"task_id":"render_1"}'
+curl -s -X POST $API/tasks/render_1/fund
+curl -s -X POST $API/tasks/render_1/start -H 'content-type: application/json' -d '{"mock_outcome":"success"}'
+sleep 30 && curl -s $API/tasks/render_1                  # SETTLED (testnet blocks take ~12 s each)
+```
+
+Notes:
+
+- **Logging.** `/health` and the startup log show only the RPC **origin**, so API keys in `RPC_URL` aren't logged.
+- **In-memory state.** Tasks live in memory, so a restart or free-plan sleep clears the task list. Escrows and payments stay on-chain.
+- **CRE on Render.** The Render service runs `SETTLEMENT_MODE=direct`. CRE settlement needs a workflow trigger the service can reach (`CRE_TRIGGER_URL`): a deployed CRE workflow, or `cre workflow simulate --listen` exposed from another host. The workflow also needs `backendUrl` set to the Render URL, and the escrow's `creForwarder` set to that network's Chainlink forwarder.
 
 ## Robotics integration interface
 
@@ -500,7 +568,8 @@ src/tasks/                           task types + TaskService (state machine; di
 src/chain/                           EscrowClient, provider, deployment record
 src/cre/                             CRE trigger client, MockKeystoneForwarder artifact + deploy, simulator launcher
 src/api/app.ts                       Express routes (incl. /cre/tasks/:id/evidence and /result)
-src/bootstrap.ts, src/server.ts      wiring + entry point (npm run dev / dev:cre)
+src/bootstrap.ts, src/server.ts      wiring + entry point (npm run dev / dev:cre; production: npm run build && npm start)
+render.yaml, tsconfig.build.json     Render Blueprint + production build (dist/)
 scripts/demo-cre.ts                  npm run demo:cre (CRE sponsor demo)
 scripts/demo.ts                      npm run demo (fallback demo)
 scripts/cre-deploy.ts, cre-simulate.ts, deploy.ts, robot-submit.ts

@@ -12,9 +12,10 @@ import { MachineTaskEscrow__factory } from "../../typechain-types";
 import { deployEscrow } from "../chain/escrow";
 import { writeDeployment } from "../chain/provider";
 import { LOCAL_CHAIN_ID } from "../config";
+import { PROJECT_ROOT } from "../paths";
 import { LOCAL_CRE, deployMockForwarder } from "./forwarder";
 
-export const CRE_PROJECT_DIR = path.resolve(__dirname, "../../cre");
+export const CRE_PROJECT_DIR = path.join(PROJECT_ROOT, "cre");
 export const CRE_WORKFLOW_DIR = path.join(CRE_PROJECT_DIR, "machineproof-settlement");
 export const CRE_WORKFLOW_CONFIG = path.join(CRE_WORKFLOW_DIR, "config.local.json");
 
