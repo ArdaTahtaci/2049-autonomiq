@@ -345,6 +345,8 @@ curl -s $API/tasks/task_001        # status SETTLED, tx hashes, verification che
 
 ## Robotics integration interface
 
+The PyBullet robot simulator in [`robotics/`](robotics/README.md) implements this interface end to end (`robotics/backend_bridge.py <task_id>`).
+
 The simulator has to produce this JSON. Extra fields such as `trajectory`, `events` or sensor data are allowed, preserved and covered by the hash:
 
 ```json
