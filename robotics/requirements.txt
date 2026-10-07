@@ -1,0 +1,11 @@
+# PyBullet: on macOS arm64 with a recent SDK there is no prebuilt wheel and the
+# source build fails; setup.sh installs the patched wheel from vendor/ instead.
+pybullet==3.2.7
+numpy==2.4.6
+fastapi==0.142.2
+uvicorn==0.54.0
+pydantic==2.13.5
+imageio==2.38.0
+pillow==12.3.0
+pytest==9.1.1
+httpx==0.28.1
