@@ -1,0 +1,9 @@
+{
+  "backendUrl": "http://127.0.0.1:3000",
+  "chainSelectorName": "anvil-devnet",
+  "escrowAddress": "0xef11D1c2aA48826D4c41e54ab82D1Ff5Ad8A64Ca",
+  "gasLimit": "800000",
+  "proofClockSkewSeconds": 300,
+  "requireSpecAnchor": true,
+  "authorizedTriggerKeys": []
+}

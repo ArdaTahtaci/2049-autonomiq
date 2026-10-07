@@ -1223,6 +1223,9 @@ describe("Adversarial: attempts to break MachineProof (CLAUDE.md §15)", () => {
         payeeAddress: sys.signers.payee.address,
         robotAdapter: "external",
         mockRobotDelayMs: 0,
+        settlementMode: "direct",
+        creTriggerUrl: "http://127.0.0.1:2000/trigger",
+        creSettlementTimeoutMs: 120_000,
         defaultTolerance: 0.05,
         defaultRewardWei: REWARD,
       };

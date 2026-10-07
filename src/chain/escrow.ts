@@ -13,6 +13,8 @@ export interface OnchainTask {
   amount_wei: string;
   proof_hash: string;
   status: OnchainTaskStatus;
+  /** Task spec hash anchored at funding (zero hash if the task was funded without one). */
+  spec_hash: string;
 }
 
 export interface TxResult {
@@ -20,7 +22,7 @@ export interface TxResult {
   block_number: number;
 }
 
-export type EscrowEventName = "TaskFunded" | "ProofCommitted" | "TaskSettled" | "TaskRefunded";
+export type EscrowEventName = "TaskFunded" | "ProofCommitted" | "TaskSettled" | "TaskRefunded" | "CreReportProcessed";
 export interface EscrowEvent extends TxResult {
   args: Record<string, unknown>;
 }
@@ -71,6 +73,12 @@ export class EscrowClient {
     return this.requester.getAddress();
   }
 
+  /** Sender and target of a transaction (e.g. CRE transmitter → forwarder for a workflow report). */
+  async getTransaction(txHash: string): Promise<{ from: string; to: string | null } | undefined> {
+    const tx = await this.requester.provider?.getTransaction(txHash);
+    return tx ? { from: tx.from, to: tx.to } : undefined;
+  }
+
   /** True if `address` holds contract code (such a payee might reject ETH and lock settlement). */
   async isContract(address: string): Promise<boolean> {
     const provider = this.requester.provider;
@@ -86,10 +94,19 @@ export class EscrowClient {
     return this.asVerifier.verifier();
   }
 
-  fundTask(taskId: string, robot: string, payee: string, amountWei: bigint): Promise<TxResult> {
+  /** Funds the escrow; with `specHash` the task spec is anchored on-chain (fundTaskWithSpec). */
+  fundTask(taskId: string, robot: string, payee: string, amountWei: bigint, specHash?: string): Promise<TxResult> {
+    const id = toOnchainTaskId(taskId);
     return this.send("fundTask", () =>
-      this.asRequester.fundTask(toOnchainTaskId(taskId), robot, payee, { value: amountWei }),
+      specHash
+        ? this.asRequester.fundTaskWithSpec(id, robot, payee, specHash, { value: amountWei })
+        : this.asRequester.fundTask(id, robot, payee, { value: amountWei }),
     );
+  }
+
+  /** Chainlink forwarder allowed to deliver CRE workflow reports (zero address = CRE path disabled). */
+  creForwarder(): Promise<string> {
+    return this.asVerifier.creForwarder();
   }
 
   commitProof(taskId: string, proofHash: string, passed: boolean, robotSignature: string): Promise<TxResult> {
@@ -108,7 +125,10 @@ export class EscrowClient {
 
   async getTask(taskId: string): Promise<OnchainTask> {
     const onchainTaskId = toOnchainTaskId(taskId);
-    const t = await this.asVerifier.getTask(onchainTaskId);
+    const [t, specHash] = await Promise.all([
+      this.asVerifier.getTask(onchainTaskId),
+      this.asVerifier.taskSpecHash(onchainTaskId),
+    ]);
     return {
       onchain_task_id: onchainTaskId,
       requester: t.requester,
@@ -117,6 +137,7 @@ export class EscrowClient {
       amount_wei: t.amount.toString(),
       proof_hash: t.proofHash,
       status: ONCHAIN_TASK_STATUSES[Number(t.status)] ?? "None",
+      spec_hash: specHash,
     };
   }
 
@@ -134,7 +155,9 @@ export class EscrowClient {
           ? await c.queryFilter(c.filters.ProofCommitted(id))
           : event === "TaskSettled"
             ? await c.queryFilter(c.filters.TaskSettled(id))
-            : await c.queryFilter(c.filters.TaskRefunded(id));
+            : event === "TaskRefunded"
+              ? await c.queryFilter(c.filters.TaskRefunded(id))
+              : await c.queryFilter(c.filters.CreReportProcessed(id));
     const log = logs.at(-1);
     if (!log) return undefined;
     return {

@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": [
+      "bun"
+    ]
+  },
+  "include": [
+    "*.ts"
+  ],
+  "exclude": [
+    "live.integration.test.ts"
+  ]
+}

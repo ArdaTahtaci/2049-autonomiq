@@ -7,6 +7,7 @@ async function main(): Promise<void> {
   console.log(`MachineProof backend listening on ${running.url}`);
   console.log(`  escrow contract : ${running.escrow.address}`);
   console.log(`  robot adapter   : ${running.service.robotAdapterName}`);
+  console.log(`  settlement      : ${config.settlementMode === "cre" ? `Chainlink CRE workflow (trigger ${config.creTriggerUrl})` : "direct (verifier key)"}`);
   console.log(`  rpc             : ${config.rpcUrl}`);
 
   const shutdown = () => {

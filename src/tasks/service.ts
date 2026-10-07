@@ -2,10 +2,11 @@ import { randomBytes } from "node:crypto";
 import { ZeroAddress, getAddress, isAddress, parseEther } from "ethers";
 import { z } from "zod";
 import { ChainError, toOnchainTaskId, type EscrowClient, type TxResult } from "../chain/escrow";
-import { formatZodError, verifyProofSubmission, type VerificationResult } from "../proof";
+import type { CreTrigger } from "../cre/trigger";
+import { computeTaskSpecHash, formatZodError, verifyProofSubmission, type VerificationResult } from "../proof";
 import type { RobotAdapter } from "../robot/adapter";
 import { MOCK_OUTCOMES } from "../robot/mockProof";
-import type { Task, TaskEvent, TaskEventType, TaskStatus, TaskView } from "./types";
+import type { CreWorkflowResult, Task, TaskEvent, TaskEventType, TaskStatus, TaskView } from "./types";
 
 type AcceptedVerification = Extract<VerificationResult, { outcome: "accepted" }>;
 
@@ -66,8 +67,30 @@ export interface TaskServiceDeps {
   config: TaskServiceConfig;
   escrow: EscrowClient;
   robot: RobotAdapter;
+  /** Settlement via the Chainlink CRE workflow instead of the backend's verifier key. */
+  cre?: { trigger: CreTrigger; settlementTimeoutMs?: number };
   log?: (msg: string) => void;
 }
+
+const DEFAULT_CRE_SETTLEMENT_TIMEOUT_MS = 120_000;
+/** Keeps the evidence document under the CRE consensus observation limit (25 kB). */
+const MAX_CRE_PROOF_BYTES = 16_000;
+/** Workflow result callbacks are unauthenticated input: bound what they can make a task retain. */
+const MAX_CRE_CALLBACKS = 10;
+
+const CreResultInput = z.object({
+  decision: z.enum(["SETTLED", "REFUNDED", "REJECTED", "SKIPPED"]),
+  proof_hash: z.string().max(66).optional(),
+  passed: z.boolean().nullable().optional(),
+  reasons: z.array(z.string().max(500)).max(50).default([]),
+  checks: z
+    .array(z.object({ name: z.string().max(64), ok: z.boolean(), detail: z.string().max(500) }))
+    .max(30)
+    .default([]),
+  tx_hash: z.string().max(66).nullable().optional(),
+  onchain_status: z.string().max(32).optional(),
+  workflow: z.string().max(64).optional(),
+});
 
 /**
  * Orchestrates the task lifecycle: escrow funding, robot execution, proof verification,
@@ -79,7 +102,10 @@ export class TaskService {
   private readonly tasks = new Map<string, Task>();
   /** Per-task mutex: one state-changing operation at a time (blocks duplicate/concurrent proofs). */
   private readonly busy = new Set<string>();
+  /** Chain syncs in flight (separate from `busy` so polling never blocks state changes). */
+  private readonly syncing = new Set<string>();
   private readonly log: (msg: string) => void;
+  private creWatcher?: NodeJS.Timeout;
 
   constructor(private readonly deps: TaskServiceDeps) {
     this.log = deps.log ?? (() => {});
@@ -117,6 +143,7 @@ export class TaskService {
       target_position: body.target_position,
       tolerance: body.tolerance ?? config.defaultTolerance,
       reward_wei: rewardWei.toString(),
+      settlement_mode: this.deps.cre ? "cre" : "direct",
       status: "CREATED",
       transactions: {},
       rejected_proofs: 0,
@@ -146,7 +173,7 @@ export class TaskService {
 
   /** Task plus a live read of the escrow contract (the source of truth for settlement). */
   async getTaskView(taskId: string): Promise<TaskView> {
-    const task = this.getTask(taskId);
+    const task = await this.syncCreSettlement(taskId);
     try {
       return { ...task, onchain: await this.deps.escrow.getTask(taskId) };
     } catch (err) {
@@ -161,15 +188,20 @@ export class TaskService {
         // settle() pushes ETH to the payee; a contract that rejects it would lock the escrow forever.
         throw new HttpError(400, `payee ${task.payee} is a contract; use an externally owned account`);
       }
+      // Anchor the acceptance criteria on-chain so the CRE workflow can detect a changed task spec.
+      const specHash = computeTaskSpecHash(task);
       const tx = await this.chain(
         task,
-        () => this.deps.escrow.fundTask(task.task_id, task.robot_address, task.payee, BigInt(task.reward_wei)),
+        () => this.deps.escrow.fundTask(task.task_id, task.robot_address, task.payee, BigInt(task.reward_wei), specHash),
         async () => {
           // Adopt only an escrow this backend funded with these exact terms that is still awaiting a proof.
+          // In cre mode the anchored spec must match too, or the workflow would reject every proof for it.
           const e = await this.deps.escrow.findEvent("TaskFunded", task.task_id);
+          const onchain = e ? await this.deps.escrow.getTask(task.task_id) : undefined;
           const ours =
             e &&
-            (await this.deps.escrow.getTask(task.task_id)).status === "Funded" &&
+            onchain?.status === "Funded" &&
+            (task.settlement_mode !== "cre" || onchain.spec_hash === specHash) &&
             String(e.args.requester) === (await this.deps.escrow.requesterAddress()) &&
             String(e.args.robot) === task.robot_address &&
             String(e.args.payee) === task.payee &&
@@ -178,12 +210,14 @@ export class TaskService {
         },
       );
       task.transactions.fund = tx.tx_hash;
+      task.spec_hash = specHash;
       this.setStatus(task, "FUNDED");
       this.addEvent(task, "ESCROW_FUNDED", "Escrow funded on-chain", {
         tx_hash: tx.tx_hash,
         block_number: tx.block_number,
         amount_wei: task.reward_wei,
         onchain_task_id: task.onchain_task_id,
+        spec_hash: specHash,
       });
       return task;
     });
@@ -220,21 +254,47 @@ export class TaskService {
 
   /**
    * Proof ingestion pipeline:
-   * validate → canonicalize → keccak256 → verify robot signature → check measured placement
-   * → commit proof hash on-chain → settle (passed) or refund (failed).
+   * validate → canonicalize → keccak256 → verify robot signature → check measured placement, then
+   *   direct mode: commit proof hash on-chain → settle (passed) or refund (failed), signed by the verifier key
+   *   cre mode:    hand the verified event to the Chainlink CRE workflow, which re-verifies it and settles
+   *                on-chain; the backend learns the outcome from the escrow (syncCreSettlement)
    */
   submitProof(taskId: string, submission: unknown): Promise<Task> {
     return this.withLock(taskId, async (task) => {
-      requireStatus(task, ["FUNDED", "RUNNING"], "accept a proof for");
-      const previousStatus = task.status;
+      const resubmission = task.status === "PROOF_RECEIVED" && creAcceptsNewProof(task);
+      if (!resubmission) requireStatus(task, ["FUNDED", "RUNNING"], "accept a proof for");
+      const previousStatus = resubmission ? task.cre!.previous_status : task.status;
+      // A failed (re)submission must leave everything exactly as it was, incl. a pending CRE settlement.
+      const snapshot = { status: task.status, proof: task.proof, verification: task.verification, cre: task.cre && { ...task.cre } };
 
       this.setStatus(task, "PROOF_RECEIVED");
-      this.addEvent(task, "PROOF_RECEIVED", "Execution proof received");
+      this.addEvent(task, "PROOF_RECEIVED", resubmission ? "Replacement execution proof received" : "Execution proof received");
+
+      const rollback = () => {
+        task.proof = snapshot.proof;
+        task.verification = snapshot.verification;
+        task.cre = snapshot.cre;
+        if (!snapshot.proof) delete task.proof;
+        if (!snapshot.verification) delete task.verification;
+        if (!snapshot.cre) delete task.cre;
+        this.setStatus(task, snapshot.status);
+      };
 
       let result: AcceptedVerification;
-      let commit: TxResult;
       try {
         result = this.verifyOrReject(task, submission);
+      } catch (err) {
+        rollback();
+        throw err;
+      }
+
+      if (this.deps.cre) {
+        await this.dispatchToCre(task, result.proof_hash, previousStatus);
+        return task;
+      }
+
+      let commit: TxResult;
+      try {
         commit = await this.chain(
           task,
           () => this.deps.escrow.commitProof(task.task_id, result.proof_hash, result.passed, result.signature),
@@ -245,9 +305,7 @@ export class TaskService {
         );
       } catch (err) {
         // Nothing was committed on-chain: roll back so a valid proof can still be submitted.
-        delete task.proof;
-        delete task.verification;
-        this.setStatus(task, previousStatus);
+        rollback();
         throw err;
       }
       task.transactions.commit = commit.tx_hash;
@@ -312,6 +370,13 @@ export class TaskService {
       }
       throw new HttpError(422, "Proof rejected", { reasons: result.reasons, checks: result.checks });
     }
+    if (this.deps.cre && result.canonical_proof.length > MAX_CRE_PROOF_BYTES) {
+      // The workflow fetches the evidence in node mode; DON consensus caps an observation at 25 kB.
+      const reason = `proof is ${result.canonical_proof.length} bytes; CRE settlement accepts at most ${MAX_CRE_PROOF_BYTES} (summarize the trajectory)`;
+      task.rejected_proofs += 1;
+      this.addEvent(task, "PROOF_REJECTED", `Proof rejected: ${reason}`, { reasons: [reason] });
+      throw new HttpError(422, "Proof rejected", { reasons: [reason], checks: result.checks });
+    }
 
     task.proof = {
       // Exactly what the robot sent (the hash covers this object, not the zod-parsed copy).
@@ -339,13 +404,231 @@ export class TaskService {
     return result;
   }
 
-  /** Manual settlement retry (settlement normally happens automatically after a passing proof). */
+  /**
+   * Manual settlement retry (settlement normally happens automatically after a passing proof).
+   * In cre mode this re-triggers the workflow, which is safe: it skips tasks that are no longer
+   * Funded on-chain, and the escrow pays out at most once.
+   */
   settleTask(taskId: string): Promise<Task> {
     return this.withLock(taskId, async (task) => {
+      if (task.settlement_mode === "cre") {
+        requireStatus(task, ["PROOF_RECEIVED"], "re-trigger CRE settlement for");
+        if (!task.proof || !task.cre) {
+          throw new HttpError(409, `Task ${task.task_id} has no proof awaiting CRE settlement`);
+        }
+        await this.dispatchToCre(task, task.proof.proof_hash, task.cre.previous_status);
+        return task;
+      }
       requireStatus(task, ["VERIFIED"], "settle");
       await this.releaseSettlement(task);
       return task;
     });
+  }
+
+  // ─── Chainlink CRE settlement ─────────────────────────────────────────────────────────────
+
+  /** What the CRE workflow fetches (GET /cre/tasks/:id/evidence): the task spec and the robot's signed proof. */
+  getCreEvidence(taskId: string) {
+    const task = this.getTask(taskId);
+    if (!task.proof) throw new HttpError(404, `Task ${taskId} has no proof`);
+    return {
+      task: {
+        task_id: task.task_id,
+        onchain_task_id: task.onchain_task_id,
+        robot_id: task.robot_id,
+        start_position: task.start_position,
+        target_position: task.target_position,
+        tolerance: task.tolerance,
+        created_at: task.created_at,
+        spec_hash: task.spec_hash ?? null,
+      },
+      submission: { proof: task.proof.raw, signature: task.proof.signature, proof_hash: task.proof.proof_hash },
+    };
+  }
+
+  /**
+   * The workflow's own report of its run (POST /cre/tasks/:id/result). Strictly informational and
+   * unauthenticated: it never changes settlement state (that only follows the chain). A REJECTED
+   * report for the pending proof lets the robot submit a replacement proof (see creAcceptsNewProof).
+   */
+  async recordCreResult(taskId: string, body: unknown): Promise<Task> {
+    const task = this.getTask(taskId);
+    const parsed = CreResultInput.safeParse(body);
+    if (!parsed.success) throw new HttpError(400, "Invalid CRE result", formatZodError(parsed.error));
+    const cre = task.cre;
+    if (!cre) throw new HttpError(409, `Task ${taskId} was not handed to CRE`);
+    if (task.status === "SETTLED" || task.status === "FAILED") {
+      throw new HttpError(409, `Task ${taskId} is already ${task.status}; workflow results are no longer accepted`);
+    }
+    if (parsed.data.proof_hash && parsed.data.proof_hash.toLowerCase() !== cre.proof_hash.toLowerCase()) {
+      throw new HttpError(409, `Result is for proof ${parsed.data.proof_hash}, not the pending proof ${cre.proof_hash}`);
+    }
+    cre.callbacks = (cre.callbacks ?? 0) + 1;
+    if (cre.callbacks > MAX_CRE_CALLBACKS) throw new HttpError(429, `Too many workflow results for task ${taskId}`);
+
+    const result: CreWorkflowResult = { ...parsed.data, received_at: new Date().toISOString() };
+    cre.workflow_result = result;
+    this.addEvent(task, "CRE_WORKFLOW_RESULT", `CRE workflow reported: ${result.decision}`, {
+      decision: result.decision,
+      passed: result.passed ?? null,
+      reasons: result.reasons,
+      tx_hash: result.tx_hash ?? null,
+    });
+    return this.syncCreSettlement(taskId);
+  }
+
+  /** Adopts the workflow's on-chain outcome (SETTLED / FAILED) once the escrow shows it. */
+  async syncCreSettlement(taskId: string): Promise<Task> {
+    const task = this.getTask(taskId);
+    const pending = () => task.settlement_mode === "cre" && task.cre !== undefined && task.status === "PROOF_RECEIVED";
+    // Read-only until the very end, under its own in-flight flag: a poll must never make a
+    // state-changing request (/settle, a resubmission) fail with "another operation in progress".
+    if (!pending() || this.syncing.has(taskId) || this.busy.has(taskId)) return task;
+    this.syncing.add(taskId);
+    try {
+      const onchain = await this.deps.escrow.getTask(taskId);
+      if (onchain.status === "Settled" || onchain.status === "Refunded") {
+        const evidence = await this.readCreSettlementEvidence(task, onchain.status);
+        // A state-changing operation may have started while we were reading: let it win.
+        if (pending() && !this.busy.has(taskId)) this.adoptCreSettlement(task, onchain.status, onchain.proof_hash, evidence);
+      } else {
+        const cre = task.cre;
+        const timeoutMs = this.deps.cre?.settlementTimeoutMs ?? DEFAULT_CRE_SETTLEMENT_TIMEOUT_MS;
+        if (cre?.status === "TRIGGERED" && Date.now() - Date.parse(cre.triggered_at) > timeoutMs && pending() && !this.busy.has(taskId)) {
+          cre.status = "TIMEOUT";
+          this.addEvent(task, "ERROR", "CRE workflow did not settle in time; retry with POST /tasks/:taskId/settle or submit a fresh robot proof");
+        }
+      }
+    } catch (err) {
+      this.log(`[cre] ${taskId}: sync failed: ${errorMessage(err)}`);
+    } finally {
+      this.syncing.delete(taskId);
+    }
+    return task;
+  }
+
+  /** Polls the chain for tasks handed to CRE (GET /tasks/:id also syncs on read). */
+  startCreWatcher(intervalMs = 1_000): void {
+    if (!this.deps.cre || this.creWatcher) return;
+    this.creWatcher = setInterval(() => {
+      for (const task of this.tasks.values()) {
+        if (task.settlement_mode === "cre" && task.status === "PROOF_RECEIVED") void this.syncCreSettlement(task.task_id);
+      }
+    }, intervalMs);
+    this.creWatcher.unref();
+  }
+
+  stopCreWatcher(): void {
+    if (this.creWatcher) clearInterval(this.creWatcher);
+    this.creWatcher = undefined;
+  }
+
+  private async dispatchToCre(task: Task, proofHash: string, previousStatus: TaskStatus): Promise<void> {
+    const trigger = this.deps.cre!.trigger;
+    const attempt = (task.cre?.attempts ?? 0) + 1;
+    task.cre = {
+      ...(task.cre ?? {}),
+      status: "TRIGGERED",
+      trigger_url: trigger.url,
+      triggered_at: new Date().toISOString(),
+      attempts: attempt,
+      proof_hash: proofHash,
+      previous_status: previousStatus,
+    };
+    delete task.cre.workflow_result;
+    try {
+      await trigger.trigger({ task_id: task.task_id, proof_hash: proofHash });
+    } catch (err) {
+      task.cre.status = "TRIGGER_FAILED";
+      const message = `${errorMessage(err)}; retry with POST /tasks/${task.task_id}/settle`;
+      task.error = message;
+      this.addEvent(task, "ERROR", message);
+      throw new HttpError(502, message);
+    }
+    delete task.error;
+    this.addEvent(task, "CRE_TRIGGERED", "Handed to the Chainlink CRE workflow for independent verification and on-chain settlement", {
+      trigger_url: trigger.url,
+      proof_hash: proofHash,
+      attempt,
+    });
+  }
+
+  private async readCreSettlementEvidence(task: Task, status: "Settled" | "Refunded") {
+    const escrow = this.deps.escrow;
+    const [report, commit, payout] = await Promise.all([
+      escrow.findEvent("CreReportProcessed", task.task_id),
+      escrow.findEvent("ProofCommitted", task.task_id),
+      escrow.findEvent(status === "Settled" ? "TaskSettled" : "TaskRefunded", task.task_id),
+    ]);
+    const tx = report ? await escrow.getTransaction(report.tx_hash) : undefined;
+    return { report, commit, payout, tx };
+  }
+
+  private adoptCreSettlement(
+    task: Task,
+    status: "Settled" | "Refunded",
+    onchainProofHash: string,
+    { report, commit, payout, tx }: Awaited<ReturnType<TaskService["readCreSettlementEvidence"]>>,
+  ): void {
+    const cre = task.cre!;
+    if (report) {
+      cre.report_tx = report.tx_hash;
+      cre.workflow_id = String(report.args.workflowId);
+      cre.forwarder = tx?.to ?? undefined;
+      cre.transmitter = tx?.from ?? undefined;
+    }
+    const via = {
+      settled_by: report ? "chainlink-cre" : "verifier",
+      ...(report ? { workflow_id: cre.workflow_id, forwarder: cre.forwarder, transmitter: cre.transmitter } : {}),
+    };
+    const passed = status === "Settled";
+
+    // Adopt what the chain says, but never silently: flag settlements this backend cannot vouch for.
+    if (onchainProofHash.toLowerCase() !== cre.proof_hash.toLowerCase()) {
+      this.addEvent(task, "ERROR", `On-chain settlement committed proof ${onchainProofHash}, not the proof handed to CRE (${cre.proof_hash}): unexpected settlement`, {
+        onchain_proof_hash: onchainProofHash,
+        expected_proof_hash: cre.proof_hash,
+      });
+    } else if (task.verification && task.verification.passed !== passed) {
+      this.addEvent(task, "ERROR", `On-chain outcome ${status} contradicts the backend pre-screen verdict (passed=${task.verification.passed})`, {
+        onchain_status: status,
+        backend_passed: task.verification.passed,
+      });
+    }
+
+    if (commit) task.transactions.commit = commit.tx_hash;
+    this.addEvent(task, "PROOF_COMMITTED", report ? "Proof hash committed on-chain by the CRE workflow report" : "Proof hash committed on-chain", {
+      tx_hash: commit?.tx_hash ?? cre.report_tx,
+      block_number: commit?.block_number,
+      proof_hash: onchainProofHash,
+      passed,
+      ...via,
+    });
+
+    if (passed) {
+      task.transactions.settle = payout?.tx_hash;
+      cre.status = "SETTLED_ONCHAIN";
+      this.setStatus(task, "SETTLED");
+      this.addEvent(task, "SETTLEMENT_RELEASED", "Payment released to payee", {
+        tx_hash: payout?.tx_hash,
+        block_number: payout?.block_number,
+        payee: task.payee,
+        amount_wei: task.reward_wei,
+        ...via,
+      });
+    } else {
+      task.transactions.refund = payout?.tx_hash;
+      cre.status = "REFUNDED_ONCHAIN";
+      // The backend's own verdict, never text from the (unauthenticated) workflow callback.
+      const reasons = task.verification?.reasons.length ? task.verification.reasons : ["settled as failed on-chain"];
+      this.addEvent(task, "TASK_FAILED", `Task failed verification: ${reasons.join("; ")}`, { reasons, ...via });
+      this.setStatus(task, "FAILED");
+      this.addEvent(task, "ESCROW_REFUNDED", "Payment withheld; escrow refunded to requester", {
+        tx_hash: payout?.tx_hash,
+        amount_wei: task.reward_wei,
+        ...via,
+      });
+    }
   }
 
   private async releaseSettlement(task: Task): Promise<void> {
@@ -417,6 +700,19 @@ export class TaskService {
     task.updated_at = event.at;
     this.log(`[task ${task.task_id}] ${type}: ${message}`);
   }
+}
+
+/**
+ * In cre mode a pending settlement can be replaced by a fresh robot proof once it is stuck (trigger
+ * failed, timed out) or the workflow reported rejecting exactly that proof. Safe: a replacement still
+ * needs a valid robot signature, and the escrow pays at most once.
+ */
+function creAcceptsNewProof(task: Task): boolean {
+  const cre = task.cre;
+  if (!cre) return false;
+  const rejected =
+    cre.workflow_result?.decision === "REJECTED" && cre.workflow_result.proof_hash?.toLowerCase() === cre.proof_hash.toLowerCase();
+  return cre.status === "TIMEOUT" || cre.status === "TRIGGER_FAILED" || (cre.status === "TRIGGERED" && rejected);
 }
 
 function requireStatus(task: Task, allowed: TaskStatus[], action: string): void {

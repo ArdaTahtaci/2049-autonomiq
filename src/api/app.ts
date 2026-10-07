@@ -9,6 +9,8 @@ export interface HealthInfo {
   verifier_address?: string;
   robot_adapter: string;
   robots: Record<string, string>;
+  settlement_mode: "direct" | "cre";
+  cre?: { trigger_url: string; forwarder: string };
   error?: string;
 }
 
@@ -20,8 +22,13 @@ export interface HealthInfo {
  *   GET  /tasks/:taskId            task + live on-chain escrow state
  *   POST /tasks/:taskId/fund       lock reward in escrow  → FUNDED
  *   POST /tasks/:taskId/start      run robot (mock or external simulator) → RUNNING
- *   POST /tasks/:taskId/proof      submit signed proof → verify → commit on-chain → SETTLED | FAILED
- *   POST /tasks/:taskId/settle     retry settlement for a VERIFIED task
+ *   POST /tasks/:taskId/proof      submit signed proof → verify → settle on-chain → SETTLED | FAILED
+ *                                  (settlement mode "cre": 202, the Chainlink CRE workflow settles)
+ *   POST /tasks/:taskId/settle     retry settlement (direct: VERIFIED task; cre: re-trigger the workflow)
+ *
+ * Chainlink CRE workflow endpoints (called by cre/machineproof-settlement):
+ *   GET  /cre/tasks/:taskId/evidence   task spec + robot-signed proof for independent verification
+ *   POST /cre/tasks/:taskId/result     the workflow's decision (informational; money state comes from chain)
  */
 export function createApp(service: TaskService, health: () => Promise<HealthInfo>) {
   const app = express();
@@ -54,11 +61,21 @@ export function createApp(service: TaskService, health: () => Promise<HealthInfo
   });
 
   app.post("/tasks/:taskId/proof", async (req, res) => {
-    res.json(await service.submitProof(req.params.taskId, req.body));
+    const task = await service.submitProof(req.params.taskId, req.body);
+    res.status(task.status === "PROOF_RECEIVED" ? 202 : 200).json(task);
   });
 
   app.post("/tasks/:taskId/settle", async (req, res) => {
     res.json(await service.settleTask(req.params.taskId));
+  });
+
+  app.get("/cre/tasks/:taskId/evidence", (req, res) => {
+    res.json(service.getCreEvidence(req.params.taskId));
+  });
+
+  app.post("/cre/tasks/:taskId/result", async (req, res) => {
+    const task = await service.recordCreResult(req.params.taskId, req.body);
+    res.json({ task_id: task.task_id, status: task.status, cre: task.cre });
   });
 
   app.use((_req, res) => {

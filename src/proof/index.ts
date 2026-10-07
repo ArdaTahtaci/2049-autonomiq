@@ -4,3 +4,4 @@ export * from "./hash";
 export * from "./signature";
 export * from "./physical";
 export * from "./verify";
+export * from "./taskSpec";

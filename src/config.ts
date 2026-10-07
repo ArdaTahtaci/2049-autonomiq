@@ -33,6 +33,9 @@ const EnvSchema = z.object({
   MOCK_ROBOT_DELAY_MS: z.coerce.number().int().min(0).default(1500),
   POSITION_TOLERANCE_M: z.coerce.number().positive().default(0.05),
   DEFAULT_REWARD_ETH: z.string().regex(/^\d+(\.\d+)?$/).default("0.1"),
+  SETTLEMENT_MODE: z.enum(["direct", "cre"]).default("direct"),
+  CRE_TRIGGER_URL: z.url().default("http://127.0.0.1:2000/trigger"),
+  CRE_SETTLEMENT_TIMEOUT_MS: z.coerce.number().int().positive().default(120_000),
 });
 
 export type RobotAdapterKind = "mock" | "external";
@@ -54,6 +57,11 @@ export interface AppConfig {
   mockRobotDelayMs: number;
   defaultTolerance: number;
   defaultRewardWei: bigint;
+  /** "direct": the backend's verifier key commits and settles. "cre": the Chainlink CRE workflow does. */
+  settlementMode: "direct" | "cre";
+  /** HTTP trigger of the CRE workflow (`cre workflow simulate --listen` serves it on :2000). */
+  creTriggerUrl: string;
+  creSettlementTimeoutMs: number;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
@@ -81,6 +89,9 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     mockRobotDelayMs: e.MOCK_ROBOT_DELAY_MS,
     defaultTolerance: e.POSITION_TOLERANCE_M,
     defaultRewardWei: parseEther(e.DEFAULT_REWARD_ETH),
+    settlementMode: e.SETTLEMENT_MODE,
+    creTriggerUrl: e.CRE_TRIGGER_URL,
+    creSettlementTimeoutMs: e.CRE_SETTLEMENT_TIMEOUT_MS,
   };
 }
 

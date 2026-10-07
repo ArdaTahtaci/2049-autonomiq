@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": [
+      "bun"
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@chainlink/cre-sdk": [
+        "./node_modules/@chainlink/cre-sdk/dist/index-unrestricted"
+      ]
+    }
+  },
+  "include": [
+    "live.integration.test.ts"
+  ]
+}

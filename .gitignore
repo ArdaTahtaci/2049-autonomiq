@@ -8,3 +8,6 @@ coverage/
 deployments/*.json
 !deployments/.gitkeep
 .claude/*.lock
+cre/.env
+cre/**/node_modules/
+cre/**/*.wasm

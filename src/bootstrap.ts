@@ -1,10 +1,11 @@
 import type { Server } from "node:http";
 import type { AddressInfo } from "node:net";
-import { Wallet, getAddress, type JsonRpcProvider } from "ethers";
+import { Wallet, ZeroAddress, getAddress, type JsonRpcProvider } from "ethers";
 import { createApp, type HealthInfo } from "./api/app";
 import { EscrowClient } from "./chain/escrow";
 import { connectProvider, readDeployment } from "./chain/provider";
 import { assertSafeKeys, type AppConfig } from "./config";
+import { CreHttpTrigger } from "./cre/trigger";
 import { ExternalRobotAdapter, MockRobotAdapter } from "./robot/adapter";
 import { TaskService } from "./tasks/service";
 
@@ -41,14 +42,38 @@ export async function startServer(config: AppConfig, log: (msg: string) => void 
     throw new Error(`VERIFIER_PRIVATE_KEY (${verifier.address}) is not the escrow's verifier (${onchainVerifier})`);
   }
 
+  // Settlement through the Chainlink CRE workflow requires the escrow to trust a CRE forwarder.
+  let creForwarder: string | undefined;
+  if (config.settlementMode === "cre") {
+    creForwarder = await escrow.creForwarder();
+    if (creForwarder === ZeroAddress) {
+      throw new Error(`Escrow ${escrowAddress} has no CRE forwarder configured. Run: npm run cre:deploy`);
+    }
+  }
+
   const robot =
     config.robotAdapter === "mock"
       ? new MockRobotAdapter(new Wallet(config.robotPrivateKey), config.mockRobotDelayMs, log)
       : new ExternalRobotAdapter(log);
-  const service = new TaskService({ config, escrow, robot, log });
+  const service = new TaskService({
+    config,
+    escrow,
+    robot,
+    log,
+    ...(config.settlementMode === "cre"
+      ? { cre: { trigger: new CreHttpTrigger(config.creTriggerUrl), settlementTimeoutMs: config.creSettlementTimeoutMs } }
+      : {}),
+  });
+  service.startCreWatcher();
 
   const health = async (): Promise<HealthInfo> => {
-    const base = { escrow_address: escrowAddress, robot_adapter: robot.name, robots: config.robots };
+    const base = {
+      escrow_address: escrowAddress,
+      robot_adapter: robot.name,
+      robots: config.robots,
+      settlement_mode: config.settlementMode,
+      ...(creForwarder ? { cre: { trigger_url: config.creTriggerUrl, forwarder: creForwarder } } : {}),
+    };
     try {
       const network = await provider.getNetwork();
       // Origin only: hosted RPC URLs carry API keys in the path/query/credentials.
@@ -73,6 +98,7 @@ export async function startServer(config: AppConfig, log: (msg: string) => void 
     escrow,
     provider,
     close: async () => {
+      service.stopCreWatcher();
       await new Promise<void>((resolve) => server.close(() => resolve()));
       provider.destroy();
     },

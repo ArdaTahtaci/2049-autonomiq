@@ -1,0 +1,28 @@
+# ==========================================================================
+# CRE WORKFLOW SETTINGS — machineproof-settlement
+# ==========================================================================
+# Run from the CRE project root (cre/):
+#   cre workflow build    ./machineproof-settlement -T local-simulation
+#   cre workflow simulate ./machineproof-settlement -T local-simulation --broadcast --listen --limits none
+#     --broadcast   : actually send the forwarder tx (without it writes are eth_call dry-runs)
+#     --listen      : keep serving POST http://localhost:2000/trigger  body {"input":{"task_id","proof_hash"}}
+#     --limits none : default prod limits allow only 1 HTTP trigger per 30s (extra ones are dropped)
+# ==========================================================================
+local-simulation:
+  user-workflow:
+    workflow-name: "machineproof-settlement-local"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.local.json"
+    secrets-path: ""
+
+# Public testnet example (deploy MachineTaskEscrow to Sepolia first, then create
+# config.sepolia.json with chainSelectorName "ethereum-testnet-sepolia", a public
+# backendUrl and non-empty authorizedTriggerKeys):
+# sepolia-settings:
+#   user-workflow:
+#     workflow-name: "machineproof-settlement"
+#   workflow-artifacts:
+#     workflow-path: "./main.ts"
+#     config-path: "./config.sepolia.json"
+#     secrets-path: ""

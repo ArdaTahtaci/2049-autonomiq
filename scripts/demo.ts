@@ -7,93 +7,18 @@
  * Uses the chain at RPC_URL if one is running, otherwise starts a Hardhat node for the duration
  * of the demo. Always deploys a fresh escrow contract. Exits non-zero if any check fails.
  */
-import { spawn, type ChildProcess } from "node:child_process";
-import path from "node:path";
-import { Wallet, formatEther, type JsonRpcProvider } from "ethers";
+import { Wallet, type JsonRpcProvider } from "ethers";
 import { startServer, type RunningServer } from "../src/bootstrap";
 import { ChainError, deployEscrow, toOnchainTaskId } from "../src/chain/escrow";
-import { connectProvider, probeChainId } from "../src/chain/provider";
+import { connectProvider } from "../src/chain/provider";
 import { loadConfig, type AppConfig } from "../src/config";
 import { computeProofHash, signProof } from "../src/proof";
 import { generateMockProof } from "../src/robot/mockProof";
 import type { TaskEvent, TaskView } from "../src/tasks/types";
+import { ensureLocalChain } from "./lib/chain";
+import { apiClient, bad, blocked, bold, check, dim, eth, failures, green, ok, reasonOf, red, section, short, sleep, vec, yellow } from "./lib/ui";
 
-const color = process.env.NO_COLOR ? false : process.stdout.isTTY;
-const paint = (code: number) => (s: string) => (color ? `\x1b[${code}m${s}\x1b[0m` : s);
-const green = paint(32);
-const red = paint(31);
-const yellow = paint(33);
-const cyan = paint(36);
-const dim = paint(2);
-const bold = paint(1);
-
-const STEP_DELAY_MS = Number(process.env.DEMO_STEP_DELAY_MS ?? 250);
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-let failures = 0;
-
-async function ok(label: string, detail = ""): Promise<void> {
-  console.log(`${green("✓")} ${label.padEnd(34)} ${dim(detail)}`);
-  await sleep(STEP_DELAY_MS);
-}
-function bad(label: string, detail = ""): void {
-  failures += 1;
-  console.log(`${red("✗")} ${label.padEnd(34)} ${detail}`);
-}
-async function blocked(label: string, detail = ""): Promise<void> {
-  console.log(`${yellow("⛔")} ${label.padEnd(33)} ${dim(detail)}`);
-  await sleep(STEP_DELAY_MS);
-}
-async function check(cond: boolean, label: string, detail: string, failDetail = detail): Promise<void> {
-  if (cond) await ok(label, detail);
-  else bad(label, failDetail);
-}
-function section(title: string): void {
-  console.log(`\n${bold(cyan(`━━ ${title} `.padEnd(78, "━")))}`);
-}
-const short = (hex: string) => `${hex.slice(0, 10)}…${hex.slice(-6)}`;
-const eth = (wei: string | bigint) => `${formatEther(wei)} ETH`;
-const vec = (v: { x: number; y: number; z: number }) => `(${v.x}, ${v.y}, ${v.z})`;
-
-// ── HTTP client ────────────────────────────────────────────────────────────────────────────────
-let baseUrl = "";
-async function api<T = TaskView>(method: string, route: string, body?: unknown, rawBody?: string): Promise<{ status: number; body: T }> {
-  const res = await fetch(baseUrl + route, {
-    method,
-    headers: { "content-type": "application/json" },
-    body: rawBody ?? (body === undefined ? undefined : JSON.stringify(body)),
-  });
-  return { status: res.status, body: (await res.json()) as T };
-}
-type ApiError = { error: string; details?: { reasons?: string[] } };
-const reasonOf = (b: unknown) => {
-  const e = b as ApiError;
-  return e.details?.reasons?.[0] ?? e.error;
-};
-
-// ── Local chain ────────────────────────────────────────────────────────────────────────────────
-async function ensureChain(rpcUrl: string): Promise<ChildProcess | undefined> {
-  if ((await probeChainId(rpcUrl)) !== undefined) {
-    console.log(dim(`Using running chain at ${rpcUrl}`));
-    return undefined;
-  }
-  const { hostname, port } = new URL(rpcUrl);
-  console.log(dim(`No chain at ${rpcUrl} — starting a local Hardhat node…`));
-  const bin = path.resolve(__dirname, "../node_modules/.bin/hardhat");
-  const child = spawn(bin, ["node", "--hostname", hostname, "--port", port || "8545"], {
-    cwd: path.resolve(__dirname, ".."),
-    stdio: ["ignore", "ignore", "pipe"],
-  });
-  let stderr = "";
-  child.stderr?.on("data", (d: Buffer) => (stderr += d.toString()));
-  const deadline = Date.now() + 60_000;
-  while (Date.now() < deadline) {
-    if (child.exitCode !== null) throw new Error(`hardhat node exited early:\n${stderr}`);
-    if ((await probeChainId(rpcUrl, 500)) !== undefined) return child;
-    await sleep(300);
-  }
-  child.kill();
-  throw new Error("Timed out waiting for the local Hardhat node");
-}
+let api: ReturnType<typeof apiClient>;
 
 // ── Event narration ────────────────────────────────────────────────────────────────────────────
 async function narrate(task: TaskView, event: TaskEvent): Promise<void> {
@@ -291,7 +216,7 @@ async function main(): Promise<void> {
     MOCK_ROBOT_DELAY_MS: process.env.MOCK_ROBOT_DELAY_MS ?? "1500",
   });
 
-  const chain = await ensureChain(config.rpcUrl);
+  const chain = await ensureLocalChain(config.rpcUrl, (msg) => console.log(dim(msg)));
   let sys: RunningServer | undefined;
   try {
     const { provider, chainId } = await connectProvider(config.rpcUrl);
@@ -302,7 +227,7 @@ async function main(): Promise<void> {
     console.log(dim(`MachineTaskEscrow deployed at ${config.escrowAddress} (verifier ${verifier.address})`));
 
     sys = await startServer(config, process.env.DEMO_VERBOSE ? console.log : () => {});
-    baseUrl = sys.url;
+    api = apiClient(sys.url);
     console.log(dim(`Backend API listening on ${sys.url} (robot adapter: ${sys.service.robotAdapterName})`));
 
     const settledTask = await scenarioSuccess(sys, provider);
@@ -311,13 +236,13 @@ async function main(): Promise<void> {
     section("Summary");
     console.log(`  ${settledTask}: ${green("SETTLED")} — robot proof verified, committed on-chain, payment released once`);
     console.log(`  ${failedTask}: ${yellow("FAILED")}  — invalid proofs rejected, lying proof committed as failed, escrow refunded`);
-    console.log(failures === 0 ? green(bold("\nAll checks passed ✓\n")) : red(bold(`\n${failures} check(s) failed ✗\n`)));
+    console.log(failures() === 0 ? green(bold("\nAll checks passed ✓\n")) : red(bold(`\n${failures()} check(s) failed ✗\n`)));
     provider.destroy();
   } finally {
     await sys?.close();
     chain?.kill();
   }
-  process.exit(failures === 0 ? 0 : 1);
+  process.exit(failures() === 0 ? 0 : 1);
 }
 
 main().catch((err: unknown) => {

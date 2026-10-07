@@ -8,12 +8,22 @@
     "compile": "hardhat compile",
     "typecheck": "hardhat compile && tsc --noEmit",
     "test": "hardhat test",
+    "test:workflow": "cd cre/machineproof-settlement && bun test",
+    "test:all": "npm test && npm run test:workflow",
     "chain": "hardhat node",
     "deploy": "hardhat compile && tsx scripts/deploy.ts",
     "dev": "tsx src/server.ts",
+    "dev:cre": "SETTLEMENT_MODE=cre tsx src/server.ts",
     "start": "tsx src/server.ts",
     "demo": "hardhat compile --quiet && tsx scripts/demo.ts",
-    "robot:submit": "tsx scripts/robot-submit.ts"
+    "demo:cre": "hardhat compile --quiet && tsx scripts/demo-cre.ts",
+    "cre:install": "cd cre/machineproof-settlement && bun install",
+    "cre:deploy": "hardhat compile --quiet && tsx scripts/cre-deploy.ts",
+    "cre:simulate": "tsx scripts/cre-simulate.ts",
+    "robot:submit": "tsx scripts/robot-submit.ts",
+    "test:cre-live": "cd cre/machineproof-settlement && bun run test:live",
+    "cre:build": "tsx scripts/cre.ts workflow build ./machineproof-settlement -T local-simulation",
+    "cre": "tsx scripts/cre.ts"
   },
   "dependencies": {
     "dotenv": "^16.6.1",

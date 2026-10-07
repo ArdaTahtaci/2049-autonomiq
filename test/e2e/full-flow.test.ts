@@ -6,7 +6,7 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
 import { ChainError } from "../../src/chain/escrow";
-import { canonicalize, computeProofHash, recoverProofSigner } from "../../src/proof";
+import { canonicalize, computeProofHash, computeTaskSpecHash, recoverProofSigner } from "../../src/proof";
 import { REWARD, startTestSystem, type TestSystem } from "../helpers/system";
 
 describe("E2E: machine task → proof → on-chain settlement", () => {
@@ -88,7 +88,9 @@ describe("E2E: machine task → proof → on-chain settlement", () => {
       amount_wei: REWARD.toString(),
       proof_hash: proof.proof_hash,
       status: "Settled",
+      spec_hash: final.spec_hash,
     });
+    expect(final.spec_hash).to.equal(computeTaskSpecHash(final)); // task spec anchored on-chain at funding
     const committed = await sys.escrow.contract.queryFilter(sys.escrow.contract.filters.ProofCommitted(final.onchain_task_id));
     expect(committed).to.have.length(1);
     expect(committed[0].args.proofHash).to.equal(proof.proof_hash);

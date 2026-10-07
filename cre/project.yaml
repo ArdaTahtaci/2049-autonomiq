@@ -1,0 +1,21 @@
+# ==========================================================================
+# CRE PROJECT SETTINGS — MachineProof
+# ==========================================================================
+# local-simulation: the local Hardhat chain (chainId 31337, `npm run chain` at the repo root).
+#   chain-selector 7759470850252068959 is the official chain-selectors entry for chainId 31337
+#   ("anvil-devnet"), which is what the workflow resolves via getNetwork("anvil-devnet").
+#   forwarder: MockKeystoneForwarder deployed deterministically on the local chain by the repo's
+#   deploy script; MachineTaskEscrow.creForwarder must point at it.
+# ==========================================================================
+local-simulation:
+  experimental-chains:
+    - chain-type: evm
+      chain-selector: 7759470850252068959
+      rpc-url: "http://127.0.0.1:8545"
+      forwarder: "0x95bD8D42f30351685e96C62EDdc0d0613bf9a87A"
+
+# Public testnet example (uncomment together with sepolia-settings in workflow.yaml):
+# sepolia-settings:
+#   rpcs:
+#     - chain-name: ethereum-testnet-sepolia
+#       url: https://ethereum-sepolia-rpc.publicnode.com

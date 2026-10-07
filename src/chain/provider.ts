@@ -11,6 +11,8 @@ export interface DeploymentRecord {
   tx_hash: string;
   block_number: number;
   deployed_at: string;
+  /** Set by `npm run cre:deploy`: the Chainlink forwarder the escrow accepts CRE reports from. */
+  cre_forwarder?: string;
 }
 
 /** Asks the node for its chain id with a timeout, so a missing node fails fast with a clear message. */

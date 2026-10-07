@@ -1,0 +1,31 @@
+{
+  "name": "machineproof-settlement",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "dist/main.js",
+  "license": "MIT",
+  "description": "Chainlink CRE workflow: independently verifies a MachineProof robot execution proof and settles the escrow on-chain",
+  "scripts": {
+    "postinstall": "bunx cre-setup",
+    "test": "bun test",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json && tsc --noEmit -p tsconfig.live.json",
+    "build": "cre-compile main.ts dist/machineproof-settlement.wasm",
+    "cre:build": "cd .. && cre workflow build ./machineproof-settlement -T local-simulation",
+    "cre:simulate": "cd .. && cre workflow simulate ./machineproof-settlement -T local-simulation --broadcast --listen --limits none",
+    "test:live": "MACHINEPROOF_LIVE=1 bun test live.integration.test.ts"
+  },
+  "dependencies": {
+    "@chainlink/cre-sdk": "1.23.0",
+    "@noble/curves": "1.9.1",
+    "viem": "2.57.3",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/bun": "1.3.14",
+    "typescript": "5.9.3"
+  },
+  "engines": {
+    "bun": ">=1.2.21"
+  }
+}
