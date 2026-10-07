@@ -29,7 +29,7 @@
     "sim_duration_s": 21.8667,
     "total_steps": 5248
   },
-  "replay_hash": "6eff3a8445a288bd9297dfcaa6725cc4a97907f9792f0a7aabd7af924cacb616",
+  "replay_hash": "fb9342deb654d8e018565bfb7ed5130f7326032211e138f23d6f86aabeadb6fb",
   "robot_id": "robot_001",
   "robot_start_pose": {
     "base_position": {
@@ -105,61 +105,13 @@
         0.102,
         0.4373
       ],
-      "sim_time_s": 0.2,
-      "step": 48
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.0,
-        0.0,
-        0.0
-      ],
-      "phase": "reset",
-      "robot_position": [
-        0.5,
-        0.102,
-        0.4373
-      ],
-      "sim_time_s": 0.4,
-      "step": 96
+      "sim_time_s": 0.5,
+      "step": 120
     },
     {
       "event": "approach_started",
       "sim_time_s": 0.5,
       "step": 120
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.0,
-        0.0,
-        0.0
-      ],
-      "phase": "approach",
-      "robot_position": [
-        0.5,
-        0.102,
-        0.4373
-      ],
-      "sim_time_s": 0.6,
-      "step": 144
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.0,
-        0.0,
-        0.0
-      ],
-      "phase": "approach",
-      "robot_position": [
-        0.4992,
-        0.1023,
-        0.4368
-      ],
-      "sim_time_s": 0.8,
-      "step": 192
     },
     {
       "gripper_width": 0.08,
@@ -186,60 +138,12 @@
       ],
       "phase": "approach",
       "robot_position": [
-        0.4891,
-        0.106,
-        0.4306
+        0.4698,
+        0.1124,
+        0.4189
       ],
-      "sim_time_s": 1.2,
-      "step": 288
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.0,
-        0.0,
-        0.0
-      ],
-      "phase": "approach",
-      "robot_position": [
-        0.4775,
-        0.1099,
-        0.4235
-      ],
-      "sim_time_s": 1.4,
-      "step": 336
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.0,
-        0.0,
-        0.0
-      ],
-      "phase": "approach",
-      "robot_position": [
-        0.4606,
-        0.115,
-        0.4135
-      ],
-      "sim_time_s": 1.6,
-      "step": 384
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.0,
-        0.0,
-        0.0
-      ],
-      "phase": "approach",
-      "robot_position": [
-        0.4381,
-        0.1206,
-        0.4005
-      ],
-      "sim_time_s": 1.8,
-      "step": 432
+      "sim_time_s": 1.5,
+      "step": 360
     },
     {
       "gripper_width": 0.08,
@@ -266,60 +170,12 @@
       ],
       "phase": "approach",
       "robot_position": [
-        0.3762,
-        0.1298,
-        0.3665
+        0.3175,
+        0.1305,
+        0.3357
       ],
-      "sim_time_s": 2.2,
-      "step": 528
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.0,
-        0.0,
-        0.0
-      ],
-      "phase": "approach",
-      "robot_position": [
-        0.338,
-        0.1311,
-        0.3463
-      ],
-      "sim_time_s": 2.4,
-      "step": 576
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.0,
-        0.0,
-        0.0
-      ],
-      "phase": "approach",
-      "robot_position": [
-        0.2964,
-        0.129,
-        0.3248
-      ],
-      "sim_time_s": 2.6,
-      "step": 624
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.0,
-        0.0,
-        0.0
-      ],
-      "phase": "approach",
-      "robot_position": [
-        0.2528,
-        0.1229,
-        0.3027
-      ],
-      "sim_time_s": 2.8,
-      "step": 672
+      "sim_time_s": 2.5,
+      "step": 600
     },
     {
       "gripper_width": 0.08,
@@ -346,60 +202,12 @@
       ],
       "phase": "approach",
       "robot_position": [
-        0.1667,
-        0.0989,
-        0.2593
+        0.1096,
+        0.0735,
+        0.23
       ],
-      "sim_time_s": 3.2,
-      "step": 768
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.0,
-        0.0,
-        0.0
-      ],
-      "phase": "approach",
-      "robot_position": [
-        0.1276,
-        0.0823,
-        0.2393
-      ],
-      "sim_time_s": 3.4,
-      "step": 816
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.0,
-        0.0,
-        0.0
-      ],
-      "phase": "approach",
-      "robot_position": [
-        0.0929,
-        0.0645,
-        0.2213
-      ],
-      "sim_time_s": 3.6,
-      "step": 864
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.0,
-        0.0,
-        0.0
-      ],
-      "phase": "approach",
-      "robot_position": [
-        0.0636,
-        0.0468,
-        0.2058
-      ],
-      "sim_time_s": 3.8,
-      "step": 912
+      "sim_time_s": 3.5,
+      "step": 840
     },
     {
       "gripper_width": 0.08,
@@ -426,60 +234,12 @@
       ],
       "phase": "approach",
       "robot_position": [
-        0.0227,
-        0.0178,
-        0.1835
+        0.0069,
+        0.0049,
+        0.1746
       ],
-      "sim_time_s": 4.2,
-      "step": 1008
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        -0.0001,
-        0.0,
-        0.0
-      ],
-      "phase": "approach",
-      "robot_position": [
-        0.0109,
-        0.0083,
-        0.1769
-      ],
-      "sim_time_s": 4.4,
-      "step": 1056
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        -0.0001,
-        0.0,
-        0.0
-      ],
-      "phase": "approach",
-      "robot_position": [
-        0.004,
-        0.0025,
-        0.1729
-      ],
-      "sim_time_s": 4.6,
-      "step": 1104
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        -0.0001,
-        0.0,
-        0.0
-      ],
-      "phase": "approach",
-      "robot_position": [
-        0.001,
-        -0.0001,
-        0.1712
-      ],
-      "sim_time_s": 4.8,
-      "step": 1152
+      "sim_time_s": 4.5,
+      "step": 1080
     },
     {
       "gripper_width": 0.08,
@@ -507,59 +267,11 @@
       "phase": "approach",
       "robot_position": [
         0.0003,
-        -0.0007,
-        0.1708
-      ],
-      "sim_time_s": 5.2,
-      "step": 1248
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        -0.0001,
-        0.0,
-        0.0
-      ],
-      "phase": "approach",
-      "robot_position": [
-        0.0003,
-        -0.0007,
-        0.1703
-      ],
-      "sim_time_s": 5.4,
-      "step": 1296
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        -0.0001,
-        0.0,
-        0.0
-      ],
-      "phase": "approach",
-      "robot_position": [
-        0.0003,
         -0.0006,
-        0.1568
+        0.1665
       ],
-      "sim_time_s": 5.6,
-      "step": 1344
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        -0.0001,
-        0.0,
-        0.0
-      ],
-      "phase": "approach",
-      "robot_position": [
-        0.0002,
-        -0.0006,
-        0.1192
-      ],
-      "sim_time_s": 5.8,
-      "step": 1392
+      "sim_time_s": 5.5,
+      "step": 1320
     },
     {
       "gripper_width": 0.08,
@@ -587,59 +299,11 @@
       "phase": "approach",
       "robot_position": [
         0.0002,
-        -0.0005,
-        0.0343
-      ],
-      "sim_time_s": 6.2,
-      "step": 1488
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        -0.0001,
-        0.0,
-        0.0
-      ],
-      "phase": "approach",
-      "robot_position": [
-        0.0002,
-        -0.0006,
-        0.0219
-      ],
-      "sim_time_s": 6.4,
-      "step": 1536
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        -0.0001,
-        0.0,
-        0.0
-      ],
-      "phase": "approach",
-      "robot_position": [
-        0.0002,
         -0.0006,
         0.0214
       ],
-      "sim_time_s": 6.6,
-      "step": 1584
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        -0.0001,
-        0.0,
-        0.0
-      ],
-      "phase": "approach",
-      "robot_position": [
-        0.0002,
-        -0.0006,
-        0.0214
-      ],
-      "sim_time_s": 6.8,
-      "step": 1632
+      "sim_time_s": 6.5,
+      "step": 1560
     },
     {
       "details": {
@@ -682,40 +346,8 @@
         -0.0006,
         0.0214
       ],
-      "sim_time_s": 7.2,
-      "step": 1728
-    },
-    {
-      "gripper_width": 0.0396,
-      "object_position": [
-        -0.0001,
-        -0.0005,
-        0.0
-      ],
-      "phase": "grasp",
-      "robot_position": [
-        0.0002,
-        -0.0006,
-        0.0214
-      ],
-      "sim_time_s": 7.4,
-      "step": 1776
-    },
-    {
-      "gripper_width": 0.0396,
-      "object_position": [
-        -0.0001,
-        -0.0005,
-        0.0
-      ],
-      "phase": "grasp",
-      "robot_position": [
-        0.0002,
-        -0.0006,
-        0.0214
-      ],
-      "sim_time_s": 7.6,
-      "step": 1824
+      "sim_time_s": 7.5,
+      "step": 1800
     },
     {
       "details": {
@@ -725,22 +357,6 @@
       "event": "object_grasped",
       "sim_time_s": 7.6167,
       "step": 1828
-    },
-    {
-      "gripper_width": 0.0396,
-      "object_position": [
-        -0.0001,
-        -0.0005,
-        0.003
-      ],
-      "phase": "lift",
-      "robot_position": [
-        0.0002,
-        -0.0006,
-        0.0242
-      ],
-      "sim_time_s": 7.8,
-      "step": 1872
     },
     {
       "gripper_width": 0.0396,
@@ -761,66 +377,18 @@
     {
       "gripper_width": 0.0396,
       "object_position": [
-        -0.0001,
-        -0.0005,
-        0.0707
-      ],
-      "phase": "lift",
-      "robot_position": [
-        0.0002,
-        -0.0005,
-        0.091
-      ],
-      "sim_time_s": 8.2,
-      "step": 1968
-    },
-    {
-      "gripper_width": 0.0396,
-      "object_position": [
         0.0,
         -0.0006,
-        0.1169
-      ],
-      "phase": "lift",
-      "robot_position": [
-        0.0002,
-        -0.0006,
-        0.1374
-      ],
-      "sim_time_s": 8.4,
-      "step": 2016
-    },
-    {
-      "gripper_width": 0.0396,
-      "object_position": [
-        0.0,
-        -0.0006,
-        0.1442
+        0.1338
       ],
       "phase": "lift",
       "robot_position": [
         0.0003,
         -0.0006,
-        0.1653
+        0.1546
       ],
-      "sim_time_s": 8.6,
-      "step": 2064
-    },
-    {
-      "gripper_width": 0.0396,
-      "object_position": [
-        0.0,
-        -0.0007,
-        0.1494
-      ],
-      "phase": "lift",
-      "robot_position": [
-        0.0003,
-        -0.0006,
-        0.1707
-      ],
-      "sim_time_s": 8.8,
-      "step": 2112
+      "sim_time_s": 8.5,
+      "step": 2040
     },
     {
       "gripper_width": 0.0396,
@@ -854,66 +422,18 @@
     {
       "gripper_width": 0.0396,
       "object_position": [
-        0.0001,
-        -0.0006,
-        0.1495
-      ],
-      "phase": "transport",
-      "robot_position": [
+        0.0007,
         0.0003,
-        -0.0006,
-        0.1708
+        0.1495
       ],
-      "sim_time_s": 9.2,
-      "step": 2208
-    },
-    {
-      "gripper_width": 0.0396,
-      "object_position": [
+      "phase": "transport",
+      "robot_position": [
+        0.0009,
         0.0003,
-        -0.0002,
-        0.1495
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.0006,
-        -0.0002,
         0.1708
       ],
-      "sim_time_s": 9.4,
-      "step": 2256
-    },
-    {
-      "gripper_width": 0.0396,
-      "object_position": [
-        0.0013,
-        0.0012,
-        0.1495
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.0015,
-        0.0012,
-        0.1708
-      ],
-      "sim_time_s": 9.6,
-      "step": 2304
-    },
-    {
-      "gripper_width": 0.0396,
-      "object_position": [
-        0.0032,
-        0.004,
-        0.1495
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.0034,
-        0.004,
-        0.1708
-      ],
-      "sim_time_s": 9.8,
-      "step": 2352
+      "sim_time_s": 9.5,
+      "step": 2280
     },
     {
       "gripper_width": 0.0396,
@@ -932,68 +452,20 @@
       "step": 2400
     },
     {
-      "gripper_width": 0.0396,
-      "object_position": [
-        0.0111,
-        0.0155,
-        0.1495
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.0113,
-        0.0153,
-        0.1708
-      ],
-      "sim_time_s": 10.2,
-      "step": 2448
-    },
-    {
       "gripper_width": 0.0395,
       "object_position": [
-        0.0178,
-        0.0246,
+        0.0218,
+        0.0301,
         0.1495
       ],
       "phase": "transport",
       "robot_position": [
-        0.0179,
-        0.0244,
+        0.0219,
+        0.0299,
         0.1708
       ],
-      "sim_time_s": 10.4,
-      "step": 2496
-    },
-    {
-      "gripper_width": 0.0395,
-      "object_position": [
-        0.0265,
-        0.0362,
-        0.1495
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.0265,
-        0.0359,
-        0.1708
-      ],
-      "sim_time_s": 10.6,
-      "step": 2544
-    },
-    {
-      "gripper_width": 0.0406,
-      "object_position": [
-        0.0376,
-        0.0501,
-        0.1495
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.0376,
-        0.0498,
-        0.1708
-      ],
-      "sim_time_s": 10.8,
-      "step": 2592
+      "sim_time_s": 10.5,
+      "step": 2520
     },
     {
       "gripper_width": 0.0415,
@@ -1012,68 +484,20 @@
       "step": 2640
     },
     {
-      "gripper_width": 0.0415,
-      "object_position": [
-        0.0683,
-        0.0844,
-        0.1495
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.0681,
-        0.084,
-        0.1708
-      ],
-      "sim_time_s": 11.2,
-      "step": 2688
-    },
-    {
       "gripper_width": 0.0418,
       "object_position": [
-        0.0883,
-        0.1042,
+        0.0995,
+        0.1146,
         0.1495
       ],
       "phase": "transport",
       "robot_position": [
-        0.0881,
-        0.1038,
+        0.0993,
+        0.1141,
         0.1708
       ],
-      "sim_time_s": 11.4,
-      "step": 2736
-    },
-    {
-      "gripper_width": 0.0418,
-      "object_position": [
-        0.1117,
-        0.1252,
-        0.1495
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.1114,
-        0.1247,
-        0.1708
-      ],
-      "sim_time_s": 11.6,
-      "step": 2784
-    },
-    {
-      "gripper_width": 0.0418,
-      "object_position": [
-        0.1387,
-        0.1468,
-        0.1495
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.1384,
-        0.1463,
-        0.1708
-      ],
-      "sim_time_s": 11.8,
-      "step": 2832
+      "sim_time_s": 11.5,
+      "step": 2760
     },
     {
       "gripper_width": 0.0418,
@@ -1094,66 +518,18 @@
     {
       "gripper_width": 0.0418,
       "object_position": [
-        0.2037,
-        0.1896,
+        0.2618,
+        0.2185,
         0.1495
       ],
       "phase": "transport",
       "robot_position": [
-        0.2032,
-        0.1891,
+        0.2612,
+        0.2181,
         0.1708
       ],
-      "sim_time_s": 12.2,
-      "step": 2928
-    },
-    {
-      "gripper_width": 0.0418,
-      "object_position": [
-        0.2416,
-        0.2093,
-        0.1495
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.241,
-        0.2089,
-        0.1708
-      ],
-      "sim_time_s": 12.4,
-      "step": 2976
-    },
-    {
-      "gripper_width": 0.0418,
-      "object_position": [
-        0.2827,
-        0.2271,
-        0.1495
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.2821,
-        0.2267,
-        0.1708
-      ],
-      "sim_time_s": 12.6,
-      "step": 3024
-    },
-    {
-      "gripper_width": 0.0418,
-      "object_position": [
-        0.3268,
-        0.2423,
-        0.1494
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.3261,
-        0.2419,
-        0.1708
-      ],
-      "sim_time_s": 12.8,
-      "step": 3072
+      "sim_time_s": 12.5,
+      "step": 3000
     },
     {
       "gripper_width": 0.0418,
@@ -1172,38 +548,6 @@
       "step": 3120
     },
     {
-      "gripper_width": 0.0418,
-      "object_position": [
-        0.4215,
-        0.2627,
-        0.1494
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.4208,
-        0.2625,
-        0.1708
-      ],
-      "sim_time_s": 13.2,
-      "step": 3168
-    },
-    {
-      "gripper_width": 0.0419,
-      "object_position": [
-        0.471,
-        0.2671,
-        0.1494
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.4702,
-        0.267,
-        0.1708
-      ],
-      "sim_time_s": 13.4,
-      "step": 3216
-    },
-    {
       "details": {
         "fault": "drop_in_transit",
         "object_position": [
@@ -1217,36 +561,20 @@
       "step": 3234
     },
     {
-      "gripper_width": 0.0784,
+      "gripper_width": 0.0597,
       "object_position": [
-        0.5208,
-        0.2683,
-        0.0704
+        0.4959,
+        0.2679,
+        0.1459
       ],
       "phase": "transport",
       "robot_position": [
-        0.5201,
-        0.2674,
+        0.4951,
+        0.2677,
         0.1708
       ],
-      "sim_time_s": 13.6,
-      "step": 3264
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.5331,
-        0.2685,
-        -0.0002
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.5697,
-        0.2637,
-        0.1708
-      ],
-      "sim_time_s": 13.8,
-      "step": 3312
+      "sim_time_s": 13.5,
+      "step": 3240
     },
     {
       "gripper_width": 0.08,
@@ -1273,60 +601,12 @@
       ],
       "phase": "transport",
       "robot_position": [
-        0.665,
-        0.2446,
+        0.7307,
+        0.2216,
         0.1708
       ],
-      "sim_time_s": 14.2,
-      "step": 3408
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.5331,
-        0.2685,
-        0.0
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.7095,
-        0.23,
-        0.1708
-      ],
-      "sim_time_s": 14.4,
-      "step": 3456
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.5331,
-        0.2685,
-        0.0
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.7511,
-        0.2126,
-        0.1708
-      ],
-      "sim_time_s": 14.6,
-      "step": 3504
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.5331,
-        0.2685,
-        0.0
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.7895,
-        0.1932,
-        0.1708
-      ],
-      "sim_time_s": 14.8,
-      "step": 3552
+      "sim_time_s": 14.5,
+      "step": 3480
     },
     {
       "gripper_width": 0.08,
@@ -1353,60 +633,12 @@
       ],
       "phase": "transport",
       "robot_position": [
-        0.8557,
-        0.1508,
+        0.8957,
+        0.1186,
         0.1707
       ],
-      "sim_time_s": 15.2,
-      "step": 3648
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.5331,
-        0.2685,
-        0.0
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.8833,
-        0.1292,
-        0.1707
-      ],
-      "sim_time_s": 15.4,
-      "step": 3696
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.5331,
-        0.2685,
-        0.0
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.9073,
-        0.1082,
-        0.1707
-      ],
-      "sim_time_s": 15.6,
-      "step": 3744
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.5331,
-        0.2685,
-        0.0
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.9278,
-        0.0882,
-        0.1707
-      ],
-      "sim_time_s": 15.8,
-      "step": 3792
+      "sim_time_s": 15.5,
+      "step": 3720
     },
     {
       "gripper_width": 0.08,
@@ -1433,60 +665,12 @@
       ],
       "phase": "transport",
       "robot_position": [
-        0.9594,
-        0.0534,
+        0.9758,
+        0.033,
         0.1707
       ],
-      "sim_time_s": 16.2,
-      "step": 3888
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.5331,
-        0.2685,
-        0.0
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.971,
-        0.0392,
-        0.1707
-      ],
-      "sim_time_s": 16.4,
-      "step": 3936
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.5331,
-        0.2685,
-        0.0
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.9801,
-        0.0273,
-        0.1707
-      ],
-      "sim_time_s": 16.6,
-      "step": 3984
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.5331,
-        0.2685,
-        0.0
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.987,
-        0.0179,
-        0.1707
-      ],
-      "sim_time_s": 16.8,
-      "step": 4032
+      "sim_time_s": 16.5,
+      "step": 3960
     },
     {
       "gripper_width": 0.08,
@@ -1513,60 +697,12 @@
       ],
       "phase": "transport",
       "robot_position": [
-        0.9955,
-        0.0058,
+        0.9982,
+        0.0018,
         0.1707
       ],
-      "sim_time_s": 17.2,
-      "step": 4128
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.5331,
-        0.2685,
-        0.0
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.9976,
-        0.0027,
-        0.1707
-      ],
-      "sim_time_s": 17.4,
-      "step": 4176
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.5331,
-        0.2685,
-        0.0
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.9986,
-        0.0012,
-        0.1707
-      ],
-      "sim_time_s": 17.6,
-      "step": 4224
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.5331,
-        0.2685,
-        0.0
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.999,
-        0.0006,
-        0.1706
-      ],
-      "sim_time_s": 17.8,
-      "step": 4272
+      "sim_time_s": 17.5,
+      "step": 4200
     },
     {
       "gripper_width": 0.08,
@@ -1595,58 +731,10 @@
       "robot_position": [
         0.999,
         0.0006,
-        0.1706
+        0.1584
       ],
-      "sim_time_s": 18.2,
-      "step": 4368
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.5331,
-        0.2685,
-        0.0
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.999,
-        0.0006,
-        0.1673
-      ],
-      "sim_time_s": 18.4,
-      "step": 4416
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.5331,
-        0.2685,
-        0.0
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.9991,
-        0.0006,
-        0.1429
-      ],
-      "sim_time_s": 18.6,
-      "step": 4464
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.5331,
-        0.2685,
-        0.0
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.9991,
-        0.0006,
-        0.0978
-      ],
-      "sim_time_s": 18.8,
-      "step": 4512
+      "sim_time_s": 18.5,
+      "step": 4440
     },
     {
       "gripper_width": 0.08,
@@ -1673,44 +761,12 @@
       ],
       "phase": "transport",
       "robot_position": [
-        0.999,
-        0.0005,
-        0.0278
-      ],
-      "sim_time_s": 19.2,
-      "step": 4608
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.5331,
-        0.2685,
-        0.0
-      ],
-      "phase": "transport",
-      "robot_position": [
         0.9989,
         0.0005,
         0.0241
       ],
-      "sim_time_s": 19.4,
-      "step": 4656
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.5331,
-        0.2685,
-        0.0
-      ],
-      "phase": "transport",
-      "robot_position": [
-        0.9989,
-        0.0005,
-        0.0241
-      ],
-      "sim_time_s": 19.6,
-      "step": 4704
+      "sim_time_s": 19.5,
+      "step": 4680
     },
     {
       "details": {
@@ -1737,40 +793,8 @@
         0.0005,
         0.0241
       ],
-      "sim_time_s": 19.8,
-      "step": 4752
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.5331,
-        0.2685,
-        0.0
-      ],
-      "phase": "place",
-      "robot_position": [
-        0.9989,
-        0.0005,
-        0.0241
-      ],
       "sim_time_s": 20.0,
       "step": 4800
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.5331,
-        0.2685,
-        0.0
-      ],
-      "phase": "place",
-      "robot_position": [
-        0.9989,
-        0.0005,
-        0.0241
-      ],
-      "sim_time_s": 20.2,
-      "step": 4848
     },
     {
       "details": {
@@ -1795,42 +819,10 @@
       "robot_position": [
         0.9989,
         0.0005,
-        0.0243
+        0.0272
       ],
-      "sim_time_s": 20.4,
-      "step": 4896
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.5331,
-        0.2685,
-        0.0
-      ],
-      "phase": "retreat",
-      "robot_position": [
-        0.999,
-        0.0005,
-        0.0358
-      ],
-      "sim_time_s": 20.6,
-      "step": 4944
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.5331,
-        0.2685,
-        0.0
-      ],
-      "phase": "retreat",
-      "robot_position": [
-        0.9991,
-        0.0005,
-        0.0718
-      ],
-      "sim_time_s": 20.8,
-      "step": 4992
+      "sim_time_s": 20.5,
+      "step": 4920
     },
     {
       "gripper_width": 0.08,
@@ -1859,58 +851,10 @@
       "robot_position": [
         0.9991,
         0.0006,
-        0.1572
+        0.1705
       ],
-      "sim_time_s": 21.2,
-      "step": 5088
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.5331,
-        0.2685,
-        0.0
-      ],
-      "phase": "retreat",
-      "robot_position": [
-        0.9991,
-        0.0006,
-        0.1701
-      ],
-      "sim_time_s": 21.4,
-      "step": 5136
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.5331,
-        0.2685,
-        0.0
-      ],
-      "phase": "retreat",
-      "robot_position": [
-        0.9991,
-        0.0006,
-        0.1706
-      ],
-      "sim_time_s": 21.6,
-      "step": 5184
-    },
-    {
-      "gripper_width": 0.08,
-      "object_position": [
-        0.5331,
-        0.2685,
-        0.0
-      ],
-      "phase": "settle",
-      "robot_position": [
-        0.9991,
-        0.0006,
-        0.1706
-      ],
-      "sim_time_s": 21.8,
-      "step": 5232
+      "sim_time_s": 21.5,
+      "step": 5160
     },
     {
       "event": "object_at_rest",

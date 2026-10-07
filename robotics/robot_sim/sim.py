@@ -22,7 +22,9 @@ from .proof import replay_hash, round_floats, xyz
 
 SCHEMA_VERSION = "1.0"
 TIMESTEP = 1.0 / 240.0
-SAMPLE_EVERY = 48  # trajectory sample every 0.2 s of sim time
+# Trajectory sample every 0.5 s of sim time. Keeps the whole proof well under the 16 kB
+# MachineProof accepts for Chainlink CRE settlement (src/tasks/service.ts MAX_CRE_PROOF_BYTES).
+SAMPLE_EVERY = 120
 
 CUBE_MASS = 0.1
 HOVER_HEIGHT = 0.15  # clearance above the cube for approach / transport

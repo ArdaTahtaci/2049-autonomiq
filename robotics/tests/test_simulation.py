@@ -36,6 +36,13 @@ def test_spec_minimum_schema(proof):
     assert isinstance(proof["success"], bool)
 
 
+def test_proof_fits_cre_settlement_limit():
+    # The backend rejects proofs over 16 000 canonical bytes when settling via Chainlink CRE.
+    # Longest accepted task (A and B 1.5 m apart) produces the longest trajectory.
+    longest = run_task(TaskConfig(object_start=(0.0, 0.0, 0.0), target=(1.49, 0.0, 0.0), timestamp=TS))
+    assert len(canonical_json(longest).encode("utf-8")) < 14_000
+
+
 def test_object_was_physically_moved(proof):
     t = proof["trajectory"]
     samples = [e for e in t if "object_position" in e and "event" not in e]

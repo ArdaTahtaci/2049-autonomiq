@@ -141,6 +141,14 @@ npm install
 npm run demo               # same flow, settled by the backend's verifier key; also runs attack scenarios
 ```
 
+### Real robot simulator demo (PyBullet)
+
+```bash
+(cd robotics && ./setup.sh)   # once: Python 3.11 venv + PyBullet (builds a wheel on Apple Silicon)
+npm run demo:sim              # real simulator → backend → direct settlement (success + dropped-cube refund)
+npm run demo:sim:cre          # same, settled through the Chainlink CRE workflow simulator
+```
+
 ## Running the CRE path step by step
 
 ```bash
@@ -345,7 +353,14 @@ curl -s $API/tasks/task_001        # status SETTLED, tx hashes, verification che
 
 ## Robotics integration interface
 
-The PyBullet robot simulator in [`robotics/`](robotics/README.md) implements this interface end to end (`robotics/backend_bridge.py <task_id>`).
+The PyBullet robot simulator in [`robotics/`](robotics/README.md) implements this interface end to end. With the backend running as `ROBOT_ADAPTER=external` (direct or `SETTLEMENT_MODE=cre`), create and fund a task, then:
+
+```bash
+npm run robot:sim -- <task_id>                         # start → simulate A→B → write robotics/results/<task_id>.json → robot:submit
+npm run robot:sim -- <task_id> --fault drop_in_transit # failure demo: measured miss → refund
+```
+
+The simulator writes an unsigned proof (Option A below); `robot:submit` signs and submits it. Proofs stay under the 16 kB limit for CRE settlement (trajectory sampled every 0.5 s).
 
 The simulator has to produce this JSON. Extra fields such as `trajectory`, `events` or sensor data are allowed, preserved and covered by the hash:
 
@@ -505,6 +520,8 @@ src/api/app.ts                       Express routes (incl. /cre/tasks/:id/eviden
 src/bootstrap.ts, src/server.ts      wiring + entry point (npm run dev / dev:cre)
 scripts/demo-cre.ts                  npm run demo:cre (CRE sponsor demo)
 scripts/demo.ts                      npm run demo (fallback demo)
+scripts/demo-sim.ts                  npm run demo:sim[:cre] (real PyBullet simulator, robotics/)
+robotics/                            PyBullet pick-and-place simulator + backend_bridge.py (npm run robot:sim)
 scripts/cre-deploy.ts, cre-simulate.ts, deploy.ts, robot-submit.ts
 examples/proof.sample.json           sample simulator proof
 test/{unit,contract,backend,e2e,adversarial}/

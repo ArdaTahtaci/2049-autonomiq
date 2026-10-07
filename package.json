@@ -17,10 +17,13 @@
     "start": "tsx src/server.ts",
     "demo": "hardhat compile --quiet && tsx scripts/demo.ts",
     "demo:cre": "hardhat compile --quiet && tsx scripts/demo-cre.ts",
+    "demo:sim": "hardhat compile --quiet && tsx scripts/demo-sim.ts",
+    "demo:sim:cre": "hardhat compile --quiet && tsx scripts/demo-sim.ts --cre",
     "cre:install": "cd cre/machineproof-settlement && bun install",
     "cre:deploy": "hardhat compile --quiet && tsx scripts/cre-deploy.ts",
     "cre:simulate": "tsx scripts/cre-simulate.ts",
     "robot:submit": "tsx scripts/robot-submit.ts",
+    "robot:sim": "robotics/.venv/bin/python robotics/backend_bridge.py",
     "test:cre-live": "cd cre/machineproof-settlement && bun run test:live",
     "cre:build": "tsx scripts/cre.ts workflow build ./machineproof-settlement -T local-simulation",
     "cre": "tsx scripts/cre.ts"

@@ -47,7 +47,7 @@ curl -s -X POST localhost:3000/tasks -H 'content-type: application/json' -d '{"t
 curl -s -X POST localhost:3000/tasks/task_001/fund
 
 # simulate it and submit the proof
-cd robotics && .venv/bin/python backend_bridge.py task_001
+cd robotics && .venv/bin/python backend_bridge.py task_001   # or, from the repo root: npm run robot:sim -- task_001
 ```
 
 `backend_bridge.py <task_id>` does the following:
@@ -139,7 +139,7 @@ rejected before the task is started, and the task stays `FUNDED`.
 ## Tests
 
 ```bash
-.venv/bin/python -m pytest -q        # 31 tests: success, schema, determinism, tampering, faults, placement, HTTP API
+.venv/bin/python -m pytest -q        # 32 tests: success, schema, determinism, tampering, faults, placement, HTTP API
 .venv/bin/python tools/sweep.py 300  # reliability sweep over random A/B pairs
 ```
 
@@ -157,6 +157,7 @@ Placement error was median 1.5 mm, p95 4.1 mm, max 9.5 mm.
 - **Scope.** One object (a 4 cm cube) and one arm. Points must be on the floor
   (`z` 0–0.3 m; the cube is always set down on the floor). There is no obstacle
   avoidance and no vision.
-- **CRE mode.** Only the direct settlement path was run end to end with
-  simulator proofs. The CRE path (`npm run demo:cre`) consumes the same signed
-  submission, but it needs the `cre` CLI and a login, which were not available here.
+- **CRE mode.** Runs end to end: `npm run demo:sim:cre` (repo root) settles a simulator
+  proof through the Chainlink CRE workflow simulator. The backend accepts at most 16 kB of
+  canonical proof for CRE, so the trajectory is sampled every 0.5 s; the longest task
+  (1.5 m) gives ~12 kB.
