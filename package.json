@@ -6,15 +6,18 @@
   "license": "MIT",
   "scripts": {
     "compile": "hardhat compile",
+    "build": "hardhat compile --quiet && tsc -p tsconfig.build.json",
     "typecheck": "hardhat compile && tsc --noEmit",
     "test": "hardhat test",
     "test:workflow": "cd cre/machineproof-settlement && bun test",
     "test:all": "npm test && npm run test:workflow",
     "chain": "hardhat node",
     "deploy": "hardhat compile && tsx scripts/deploy.ts",
+    "deploy:sepolia": "test -f .env.sepolia || { echo 'Missing .env.sepolia (see README → Deploying to Render)'; exit 1; } && hardhat compile && DOTENV_CONFIG_PATH=.env.sepolia tsx scripts/deploy.ts",
     "dev": "tsx src/server.ts",
     "dev:cre": "SETTLEMENT_MODE=cre tsx src/server.ts",
-    "start": "tsx src/server.ts",
+    "dev:sepolia": "test -f .env.sepolia || { echo 'Missing .env.sepolia (see README → Deploying to Render)'; exit 1; } && DOTENV_CONFIG_PATH=.env.sepolia tsx src/server.ts",
+    "start": "node dist/src/server.js",
     "demo": "hardhat compile --quiet && tsx scripts/demo.ts",
     "demo:cre": "hardhat compile --quiet && tsx scripts/demo-cre.ts",
     "demo:sim": "hardhat compile --quiet && tsx scripts/demo-sim.ts",
@@ -51,5 +54,8 @@
     "tsx": "^4.23.15",
     "typechain": "^8.3.2",
     "typescript": "~5.9.3"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }

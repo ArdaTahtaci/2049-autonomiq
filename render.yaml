@@ -1,0 +1,41 @@
+# Render Blueprint — MachineProof backend (Express API) against a public testnet.
+# Dashboard: New → Blueprint → select this repo. Secrets marked `sync: false` are prompted for on
+# first deploy (never commit them). Deploy the escrow first: see README → "Deploying to Render".
+services:
+  - type: web
+    name: machineproof-backend
+    runtime: node
+    plan: free # free instances sleep when idle and lose the in-memory task store; use starter+ for demos
+    # --include=dev: the build needs hardhat (contract types) and typescript even if NODE_ENV=production
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npm start # node dist/src/server.js
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: HOST
+        value: 0.0.0.0 # PORT is injected by Render
+      - key: SETTLEMENT_MODE
+        value: direct # "cre" needs a reachable CRE workflow trigger (CRE_TRIGGER_URL)
+      - key: ROBOT_ADAPTER
+        value: mock # "external" when the real simulator POSTs proofs
+      - key: DEFAULT_REWARD_ETH
+        value: "0.001"
+      - key: MAX_REWARD_ETH
+        value: "0.01" # cap: anyone who can reach the API can create + fund tasks with the requester key
+      # ── secrets / per-deployment values (set in the dashboard) ──
+      - key: RPC_URL # e.g. https://ethereum-sepolia-rpc.publicnode.com or an Alchemy/Infura URL
+        sync: false
+      - key: ESCROW_ADDRESS # printed by `npm run deploy`
+        sync: false
+      - key: ESCROW_DEPLOY_BLOCK # printed by `npm run deploy`
+        sync: false
+      - key: VERIFIER_PRIVATE_KEY # funded with testnet ETH (gas for commit/settle)
+        sync: false
+      - key: REQUESTER_PRIVATE_KEY # funded with testnet ETH (task rewards + gas)
+        sync: false
+      - key: ROBOT_PRIVATE_KEY # robot signing identity (no funds needed)
+        sync: false
+      - key: PAYEE_ADDRESS # receives task payments
+        sync: false

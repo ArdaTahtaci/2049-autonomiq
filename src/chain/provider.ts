@@ -1,8 +1,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { JsonRpcProvider, Network } from "ethers";
+import { PROJECT_ROOT } from "../paths";
 
-export const DEPLOYMENT_FILE = path.resolve(__dirname, "../../deployments/localhost.json");
+export const DEPLOYMENT_FILE = path.join(PROJECT_ROOT, "deployments", "localhost.json");
 
 export interface DeploymentRecord {
   chain_id: string;
@@ -31,17 +32,34 @@ export async function probeChainId(rpcUrl: string, timeoutMs = 2000): Promise<bi
   }
 }
 
+/** True for RPC URLs on this machine (local Hardhat node). */
+export function isLocalRpc(rpcUrl: string): boolean {
+  const host = new URL(rpcUrl).hostname;
+  return host === "127.0.0.1" || host === "localhost" || host === "::1" || host === "[::1]";
+}
+
 /**
- * Provider pinned to a known chain id (no background network detection, fast receipt polling).
+ * Provider pinned to a known chain id (no background network detection).
  * cacheTimeout -1 disables ethers' 250 ms request cache, which otherwise returns a stale
  * "pending" nonce for back-to-back transactions from the same wallet (commit → settle).
+ * Local nodes automine, so receipts are polled fast; hosted RPCs (testnets, ~12 s blocks, rate
+ * limits) get a longer connect timeout and gentler polling.
  */
 export async function connectProvider(rpcUrl: string): Promise<{ provider: JsonRpcProvider; chainId: bigint }> {
-  const chainId = await probeChainId(rpcUrl);
+  const local = isLocalRpc(rpcUrl);
+  const chainId = await probeChainId(rpcUrl, local ? 2_000 : 10_000);
   if (chainId === undefined) {
-    throw new Error(`Cannot reach an Ethereum node at ${rpcUrl}. Start the local chain first: npm run chain`);
+    throw new Error(
+      local
+        ? `Cannot reach an Ethereum node at ${rpcUrl}. Start the local chain first: npm run chain`
+        : `Cannot reach the RPC endpoint at ${new URL(rpcUrl).origin} (check RPC_URL).`,
+    );
   }
-  const provider = new JsonRpcProvider(rpcUrl, Network.from(chainId), { staticNetwork: true, pollingInterval: 250, cacheTimeout: -1 });
+  const provider = new JsonRpcProvider(rpcUrl, Network.from(chainId), {
+    staticNetwork: true,
+    pollingInterval: local ? 250 : 2_000,
+    cacheTimeout: -1,
+  });
   return { provider, chainId };
 }
 

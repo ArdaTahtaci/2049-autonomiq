@@ -64,6 +64,8 @@ export class EscrowClient {
     readonly address: string,
     verifier: Signer,
     private readonly requester: Signer,
+    /** First block to scan for events (the deployment block on public networks). */
+    private readonly fromBlock = 0,
   ) {
     this.asVerifier = MachineTaskEscrow__factory.connect(address, verifier);
     this.asRequester = MachineTaskEscrow__factory.connect(address, requester);
@@ -148,16 +150,17 @@ export class EscrowClient {
   async findEvent(event: EscrowEventName, taskId: string): Promise<EscrowEvent | undefined> {
     const id = toOnchainTaskId(taskId);
     const c = this.asVerifier;
+    const from = this.fromBlock;
     const logs =
       event === "TaskFunded"
-        ? await c.queryFilter(c.filters.TaskFunded(id))
+        ? await c.queryFilter(c.filters.TaskFunded(id), from)
         : event === "ProofCommitted"
-          ? await c.queryFilter(c.filters.ProofCommitted(id))
+          ? await c.queryFilter(c.filters.ProofCommitted(id), from)
           : event === "TaskSettled"
-            ? await c.queryFilter(c.filters.TaskSettled(id))
+            ? await c.queryFilter(c.filters.TaskSettled(id), from)
             : event === "TaskRefunded"
-              ? await c.queryFilter(c.filters.TaskRefunded(id))
-              : await c.queryFilter(c.filters.CreReportProcessed(id));
+              ? await c.queryFilter(c.filters.TaskRefunded(id), from)
+              : await c.queryFilter(c.filters.CreReportProcessed(id), from);
     const log = logs.at(-1);
     if (!log) return undefined;
     return {

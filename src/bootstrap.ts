@@ -36,7 +36,8 @@ export async function startServer(config: AppConfig, log: (msg: string) => void 
 
   const verifier = new Wallet(config.verifierPrivateKey, provider);
   const requester = new Wallet(config.requesterPrivateKey, provider);
-  const escrow = new EscrowClient(escrowAddress, verifier, requester);
+  const deployBlock = config.escrowDeployBlock || (deployment?.escrow_address === escrowAddress ? deployment.block_number : 0);
+  const escrow = new EscrowClient(escrowAddress, verifier, requester, deployBlock);
   const onchainVerifier = await escrow.verifierAddress();
   if (getAddress(onchainVerifier) !== verifier.address) {
     throw new Error(`VERIFIER_PRIVATE_KEY (${verifier.address}) is not the escrow's verifier (${onchainVerifier})`);
@@ -86,13 +87,14 @@ export async function startServer(config: AppConfig, log: (msg: string) => void 
 
   const app = createApp(service, health);
   const server = await new Promise<Server>((resolve, reject) => {
-    const s = app.listen(config.port, () => resolve(s));
+    // Bind all interfaces by default (HOST=0.0.0.0) so a hosting platform's router can reach us.
+    const s = app.listen(config.port, config.host ?? "0.0.0.0", () => resolve(s));
     s.on("error", reject);
   });
   const { port } = server.address() as AddressInfo;
 
   return {
-    url: `http://127.0.0.1:${port}`,
+    url: `http://${!config.host || config.host === "0.0.0.0" || config.host === "::" ? "127.0.0.1" : config.host}:${port}`,
     server,
     service,
     escrow,
