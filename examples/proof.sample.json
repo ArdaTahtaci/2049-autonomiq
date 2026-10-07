@@ -1,0 +1,20 @@
+{
+  "task_id": "task_001",
+  "robot_id": "robot_001",
+  "timestamp": "2026-10-07T12:00:00Z",
+  "start_position": { "x": 0, "y": 0, "z": 0 },
+  "target_position": { "x": 1, "y": 0, "z": 0 },
+  "final_object_position": { "x": 1.01, "y": 0.01, "z": 0 },
+  "success": true,
+  "trajectory": [
+    { "t_ms": 0, "x": 0, "y": 0, "z": 0, "gripper": "open" },
+    { "t_ms": 400, "x": 0, "y": 0, "z": 0.15, "gripper": "closed" },
+    { "t_ms": 1600, "x": 1, "y": 0, "z": 0.15, "gripper": "closed" },
+    { "t_ms": 2000, "x": 1.01, "y": 0.01, "z": 0, "gripper": "open" }
+  ],
+  "events": [
+    { "t_ms": 200, "type": "GRASP" },
+    { "t_ms": 1900, "type": "PLACE" },
+    { "t_ms": 2000, "type": "RELEASE" }
+  ]
+}
