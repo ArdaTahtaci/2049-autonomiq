@@ -1,4 +1,6 @@
+import path from "node:path";
 import express, { type NextFunction, type Request, type Response } from "express";
+import { PROJECT_ROOT } from "../paths";
 import { HttpError, type TaskService } from "../tasks/service";
 
 export interface HealthInfo {
@@ -16,6 +18,7 @@ export interface HealthInfo {
 
 /**
  * REST API (all JSON, snake_case):
+ *   GET  /                         demo UI (static files in web/; talks to this API only, no secrets)
  *   GET  /health
  *   POST /tasks                    create task            → 201 Task
  *   GET  /tasks                    list tasks
@@ -77,6 +80,9 @@ export function createApp(service: TaskService, health: () => Promise<HealthInfo
     const task = await service.recordCreResult(req.params.taskId, req.body);
     res.json({ task_id: task.task_id, status: task.status, cre: task.cre });
   });
+
+  // Demo UI. Registered after the API routes so it can never shadow them.
+  app.use(express.static(path.join(PROJECT_ROOT, "web"), { index: "index.html", maxAge: 0 }));
 
   app.use((_req, res) => {
     res.status(404).json({ error: "Not found" });
